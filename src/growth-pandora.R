@@ -112,6 +112,15 @@ latlonFromRowCol <- function(x, row, col) {
 
 # Function to call Pandora on the (global) parameter file
 runPandora <- function() {
+  # Note than pandora can't handle spaces in the paramter file path
+  # - if there are spaces in tempdir, copy the parameter file to a system temp file
+  # - also update paramterFile location in the local scope
+  if(str_detect(tempDir, " ")){
+    parameterTempFile <- tempfile(pattern = "pandora_parameter", fileext = ".txt")
+    file.copy(parameterFile, parameterTempFile, overwrite = T)
+    parameterFile <- parameterTempFile
+  }
+  
   ssimEnvironment()$PackageDirectory %>%
     str_replace_all("\\\\", "/") %>%
     str_c("/pandora.exe /silent /nowin ", parameterFile) %>%
