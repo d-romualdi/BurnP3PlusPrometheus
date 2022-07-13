@@ -104,7 +104,7 @@ lookup <- function(x, old, new) dplyr::recode(x, !!!set_names(new, old))
 # Function to convert a raster and row and column indices to Lat Long
 latlonFromRowCol <- function(x, row, col) {
   cellFromRowCol(x, row, col) %>%
-    {as.points(x)[.]} %>%
+    {as.points(x, na.rm = F)[.]} %>%
     project("+proj=longlat") %>%
     crds() %>%
     return
