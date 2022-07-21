@@ -168,7 +168,7 @@ generateParameterFile <- function(Iteration, FireID, Lat, Lon, data) {
     str_c("Fire_name ", fileTag),
     str_c("Projection_File ", fuelsRasterProjection),
     str_c("FBP_GridFile ", fuelsRasterAscii),
-    ifelse(!is.null(elevationRaster), str_c("Elev_GridFile ", sources(elevationRaster)), NA),
+    if(!is.null(elevationRaster)){ str_c("Elev_GridFile ", sources(elevationRaster)) } else NA,
     str_c("Fuel_Table ", fuelLookup),
     str_c("Ign_DateTime 1/1/2000:13:00:00"),
     str_c("Ign_Lon ", Lon),
