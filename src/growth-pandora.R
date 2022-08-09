@@ -4,6 +4,8 @@ library(lubridate)
 library(terra)
 
 # Setup ----
+progressBar(type = "message", message = "")
+progressBar(type = "message", message = "Preparing inputs...")
 
 ## Connect to SyncroSim ----
 
@@ -352,16 +354,18 @@ fireGrowthInputs <- DeterministicBurnCondition %>%
 progressBar("begin", totalSteps = length(iterations))
 
 # Grow fires ----
+progressBar(type = "message", message = "Growing fires...")
+
 burnAreas <- fireGrowthInputs %>%
   pmap(runIteration) %>%
   # The list of burned areas is nested by iteration, we don't need this structure
   unlist()
 
 # Report status ----
-message("Done Simulation. ", 
-        sum(!is.na(burnAreas)), " fires burned. ",
-        sum(burnAreas < minimumFireSize, na.rm = T), " fires discarded due to insufficient burn area. ",
-        round(sum(burnAreas >= minimumFireSize, na.rm = T) / sum(!is.na(burnAreas)) * 100, 0), "% of simulated fires were above the minimum fire size.")
+updateRunLog("\nBurn Summary:\n", 
+             sum(!is.na(burnAreas)), " fires burned.\n",
+             sum(burnAreas < minimumFireSize, na.rm = T), " fires discarded due to insufficient burn area.\n",
+             round(sum(burnAreas >= minimumFireSize, na.rm = T) / sum(!is.na(burnAreas)) * 100, 0), "% of simulated fires were above the minimum fire size.")
 
 # Issue warning if there were not enough valid fires
 if(sum(burnAreas >= minimumFireSize, na.rm = T) < sum(DeterministicIgnitionCount)) {
@@ -378,16 +382,18 @@ if(sum(burnAreas >= minimumFireSize, na.rm = T) < sum(DeterministicIgnitionCount
     pull(Incomplete) %>%
     sum
 
-  warning("Could not sample enough fires above the specified minimum fire size for ", incompleteIterations,
-          " iterations. Please increase the Maximum Number of Fires to Resample per Iteration in the Run Controls",
-          " or decrease the Minimum Fire Size. Please see the Fire Statistics table for details on specific iterations,",
-          " fires, and burn conditions.")
+  updateRunLog("\nWarning: Could not sample enough fires above the specified minimum fire size for ", incompleteIterations,
+               " iterations. Please increase the Maximum Number of Fires to Resample per Iteration in the Run Controls",
+               " or decrease the Minimum Fire Size. Please see the Fire Statistics table for details on specific iterations,",
+               " fires, and burn conditions.")
 }
 
 # Save relevant outputs ----
 
 ## Fire statistics table ----
 if(OutputOptions$FireStatistics) {
+  progressBar(type = "message", message = "Generating fire statistics table...")
+  
   # Load necessary rasters and lookup tables
   fireZoneRaster <- tryCatch(
     datasheetRaster(myScenario, "burnP3Plus_LandscapeRasters", "FireZoneGridFileName"),
@@ -440,6 +446,8 @@ if(OutputOptions$FireStatistics) {
 
 ## Burn maps ----
 if(saveBurnMaps) {
+  progressBar(type = "message", message = "Saving burn maps...")
+  
   # Build table of burn maps and save to SyncroSim
   OutputBurnMap <- 
     tibble(
@@ -456,6 +464,7 @@ if(saveBurnMaps) {
 
 ## Burn perimeters ----
 if(OutputOptionsSpatial$BurnPerimeter) {
+  progressBar(type = "message", message = "Saving burn perimeters...")
   OutputBurnPerimeter <-
     tibble(
       FileName = list.files(shapeOutputFolder, pattern = "*.shp", full.names = T),
