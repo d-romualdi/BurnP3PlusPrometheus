@@ -40,14 +40,20 @@ elevationRaster <- tryCatch(
   error = function(e) NULL)
 
 ## Handle empty values ----
+if(nrow(FuelTypeCrosswalk) == 0) {
+  updateRunLog("No fuels code crosswalk found! Using default crosswalk for Canadian Forest Service fuel codes.", type = "warning")
+  FuelTypeCrosswalk <- read_csv(file.path(ssimEnvironment()$PackageDirectory, "Default Fuel Crosswalk.csv"))
+  saveDatasheet(myScenario, FuelTypeCrosswalk, "burnP3PlusPrometheus_FuelCodeCrosswalk")
+}
+
 if(nrow(OutputOptions) == 0) {
-  updateRunLog("No tabular output options chosen. Defaulting to keeping all tabular outputs.")
+  updateRunLog("No tabular output options chosen. Defaulting to keeping all tabular outputs.", type = "info")
   OutputOptions[1,] <- rep(TRUE, length(OutputOptions[1,]))
   saveDatasheet(myScenario, OutputOptions, "burnP3Plus_OutputOption")
 }
 
 if(nrow(OutputOptionsSpatial) == 0) {
-  updateRunLog("No spatial output options chosen. Defaulting to keeping all spatial outputs.")
+  updateRunLog("No spatial output options chosen. Defaulting to keeping all spatial outputs.", type = "info")
   OutputOptionsSpatial[1,] <- rep(TRUE, length(OutputOptionsSpatial[1,]))
   saveDatasheet(myScenario, OutputOptionsSpatial, "burnP3Plus_OutputOptionSpatial")
 }
@@ -389,10 +395,10 @@ if(sum(burnAreas >= minimumFireSize, na.rm = T) < sum(DeterministicIgnitionCount
     pull(Incomplete) %>%
     sum
 
-  updateRunLog("\nWarning: Could not sample enough fires above the specified minimum fire size for ", incompleteIterations,
+  updateRunLog("\nCould not sample enough fires above the specified minimum fire size for ", incompleteIterations,
                " iterations. Please increase the Maximum Number of Fires to Resample per Iteration in the Run Controls",
                " or decrease the Minimum Fire Size. Please see the Fire Statistics table for details on specific iterations,",
-               " fires, and burn conditions.")
+               " fires, and burn conditions.", type = "warning")
 }
 
 # Save relevant outputs ----
