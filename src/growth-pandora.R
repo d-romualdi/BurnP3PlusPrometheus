@@ -7,6 +7,13 @@ library(terra)
 progressBar(type = "message", message = "")
 progressBar(type = "message", message = "Preparing inputs...")
 
+## Ensure not running through conda ----
+
+# For the time being, Pandora cannot connect to Prometheus installed on the host
+# when run through conda. For now, throw an error when trying to run through conda.
+if(useConda(ssimLibrary()))
+  stop("Error: The Prometheus transformer currently does not support runs through conda. Please install the necessary dependencies directly to your machine and disable the `Use Conda` feature to use this fire growth model.")
+
 ## Connect to SyncroSim ----
 
 myScenario <- scenario()
