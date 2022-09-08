@@ -147,9 +147,9 @@ updateBreakpoint <- function() {
   if (elapsed < 60) {
     return(str_c(round(elapsed), "sec"))
   } else if (elapsed < 60^2) {
-    return(str_c(round(elapsed / 60), "min"))
+    return(str_c(round(elapsed / 60, 1), "min"))
   } else
-    return(str_c(round(elapsed / 60 / 60), "hr"))
+    return(str_c(round(elapsed / 60 / 60, 1), "hr"))
 }
 
 # Define a function to facilitate recoding values using a lookup table
@@ -403,7 +403,7 @@ burnAreas <- fireGrowthInputs %>%
 updateRunLog("\nBurn Summary:\n", 
              sum(!is.na(burnAreas)), " fires burned.\n",
              sum(burnAreas < minimumFireSize, na.rm = T), " fires discarded due to insufficient burn area.\n",
-             round(sum(burnAreas >= minimumFireSize, na.rm = T) / sum(!is.na(burnAreas)) * 100, 0), "% of simulated fires were above the minimum fire size.")
+             round(sum(burnAreas >= minimumFireSize, na.rm = T) / sum(!is.na(burnAreas)) * 100, 0), "% of simulated fires were above the minimum fire size.\n")
 
 # Issue warning if there were not enough valid fires
 if(sum(burnAreas >= minimumFireSize, na.rm = T) < sum(DeterministicIgnitionCount)) {
@@ -420,10 +420,10 @@ if(sum(burnAreas >= minimumFireSize, na.rm = T) < sum(DeterministicIgnitionCount
     pull(Incomplete) %>%
     sum
 
-  updateRunLog("\nCould not sample enough fires above the specified minimum fire size for ", incompleteIterations,
+  updateRunLog("Could not sample enough fires above the specified minimum fire size for ", incompleteIterations,
                " iterations. Please increase the Maximum Number of Fires to Resample per Iteration in the Run Controls",
                " or decrease the Minimum Fire Size. Please see the Fire Statistics table for details on specific iterations,",
-               " fires, and burn conditions.", type = "warning")
+               " fires, and burn conditions.\n", type = "warning")
 }
 
 updateRunLog("Finished burning fires in ", updateBreakpoint())
