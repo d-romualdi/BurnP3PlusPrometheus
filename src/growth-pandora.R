@@ -4,8 +4,10 @@ library(lubridate)
 library(terra)
 
 # Setup ----
-progressBar(type = "message", message = "")
 progressBar(type = "message", message = "Preparing inputs...")
+
+# Initialize first breakpoint for timing code
+currentBreakPoint <- proc.time()
 
 ## Ensure not running through conda ----
 
@@ -131,6 +133,24 @@ burnAccumulator <- rast(fuelsRaster)
 ## Function Definitions ----
 
 ### Convenience and conversion functions ----
+
+# Function to time code by returning a clean string of time since this function was last called
+updateBreakpoint <- function() {
+  # Calculate time since last breakpoint
+  newBreakPoint <- proc.time()
+  elapsed <- (newBreakPoint - currentBreakPoint)['elapsed']
+  
+  # Update current breakpoint
+  currentBreakPoint <<- newBreakPoint
+  
+  # Return cleaned elapsed time
+  if (elapsed < 60) {
+    return(str_c(round(elapsed), "sec"))
+  } else if (elapsed < 60^2) {
+    return(str_c(round(elapsed / 60), "min"))
+  } else
+    return(str_c(round(elapsed / 60 / 60), "hr"))
+}
 
 # Define a function to facilitate recoding values using a lookup table
 lookup <- function(x, old, new) dplyr::recode(x, !!!set_names(new, old))
@@ -318,6 +338,8 @@ runIteration <- function(Iteration, data) {
   return(area)
 }
 
+updateRunLog("Finished parsing run inputs in ", updateBreakpoint())
+
 # Prepare shared inputs ----
 
 # Create a local copy of the fuels grid as ASCII and projection file
@@ -365,6 +387,8 @@ fireGrowthInputs <- DeterministicBurnCondition %>%
   group_by(Iteration) %>%
   nest
 
+updateRunLog("Finished generating model inputs in ", updateBreakpoint())
+
 progressBar("begin", totalSteps = length(iterations))
 
 # Grow fires ----
@@ -401,6 +425,8 @@ if(sum(burnAreas >= minimumFireSize, na.rm = T) < sum(DeterministicIgnitionCount
                " or decrease the Minimum Fire Size. Please see the Fire Statistics table for details on specific iterations,",
                " fires, and burn conditions.", type = "warning")
 }
+
+updateRunLog("Finished burning fires in ", updateBreakpoint())
 
 # Save relevant outputs ----
 
@@ -456,6 +482,8 @@ if(OutputOptions$FireStatistics) {
   # Output if there are records to save
   if(nrow(OutputFireStatistic) > 0)
     saveDatasheet(myScenario, OutputFireStatistic, "burnP3Plus_OutputFireStatistic", append = T)
+  
+  updateRunLog("Finished collecting fire statistics in ", updateBreakpoint())
 }
 
 ## Burn maps ----
@@ -474,6 +502,8 @@ if(saveBurnMaps) {
   # Output if there are records to save
   if(nrow(OutputBurnMap) > 0)
     saveDatasheet(myScenario, OutputBurnMap, "burnP3Plus_OutputBurnMap", append = T)
+  
+  updateRunLog("Finished collecting burn maps in ", updateBreakpoint())
 }
 
 ## Burn perimeters ----
@@ -493,6 +523,8 @@ if(OutputOptionsSpatial$BurnPerimeter) {
   # Output if there are records to save
   if(nrow(OutputBurnPerimeter) > 0)
     saveDatasheet(myScenario, OutputBurnPerimeter, "burnP3Plus_OutputFirePerimeter", append = T)
+  
+  updateRunLog("Finished collecting burn perimeters in ", updateBreakpoint())
 }
 
 # Remove grid outputs if present
