@@ -9,14 +9,6 @@ progressBar(type = "message", message = "Preparing inputs...")
 # Initialize first breakpoint for timing code
 currentBreakPoint <- proc.time()
 
-## Ensure not running through conda ----
-
-# For the time being, Pandora cannot connect to Prometheus installed on the host
-# when run through conda. For now, throw an error when trying to run through conda.
-if(Sys.getenv("ssim_conda_rlib_path") != "") {
-  stop("The Prometheus transformer currently does not support runs through conda. Please install the necessary dependencies directly to your machine and disable the `Use Conda` feature to use this fire growth model.")
-}
-
 ## Connect to SyncroSim ----
 
 myScenario <- scenario()
@@ -37,9 +29,11 @@ OutputOptions <- datasheet(myScenario, "burnP3Plus_OutputOption")
 OutputOptionsSpatial <- datasheet(myScenario, "burnP3Plus_OutputOptionSpatial")
 
 # Import relevant rasters
-fuelsRaster <- datasheetRaster(myScenario, "burnP3Plus_LandscapeRasters", "FuelGridFileName") %>% rast()
+# - Note that datasheetRaster is avoided as it requires rgdal
+# - Under conda, this causes Prometheus to point to the wrong version of GDAL
+fuelsRaster <- datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["FuelGridFileName"]] %>% rast()
 elevationRaster <- tryCatch(
-  datasheetRaster(myScenario, "burnP3Plus_LandscapeRasters", "ElevationGridFileName") %>% rast(),
+  datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["ElevationGridFileName"]] %>% rast(),
   error = function(e) NULL)
 
 ## Handle empty values ----
@@ -436,10 +430,10 @@ if(OutputOptions$FireStatistics) {
   
   # Load necessary rasters and lookup tables
   fireZoneRaster <- tryCatch(
-    datasheetRaster(myScenario, "burnP3Plus_LandscapeRasters", "FireZoneGridFileName"),
+    datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["FireZoneGridFileName"]],
     error = function(e) NULL)
   weatherZoneRaster <- tryCatch(
-    datasheetRaster(myScenario, "burnP3Plus_LandscapeRasters", "WeatherZoneGridFileName"),
+    datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["WeatherZoneGridFileName"]],
     error = function(e) NULL)
   FireZoneTable <- datasheet(myScenario, "burnP3Plus_FireZone")
   WeatherZoneTable <- datasheet(myScenario, "burnP3Plus_WeatherZone")
