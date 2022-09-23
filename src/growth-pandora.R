@@ -430,10 +430,10 @@ if(OutputOptions$FireStatistics) {
   
   # Load necessary rasters and lookup tables
   fireZoneRaster <- tryCatch(
-    datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["FireZoneGridFileName"]],
+    rast(datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["FireZoneGridFileName"]]),
     error = function(e) NULL)
   weatherZoneRaster <- tryCatch(
-    datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["WeatherZoneGridFileName"]],
+    rast(datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["WeatherZoneGridFileName"]]),
     error = function(e) NULL)
   FireZoneTable <- datasheet(myScenario, "burnP3Plus_FireZone")
   WeatherZoneTable <- datasheet(myScenario, "burnP3Plus_WeatherZone")
@@ -458,8 +458,8 @@ if(OutputOptions$FireStatistics) {
     left_join(DeterministicIgnitionLocation, by = c("Iteration", "FireID")) %>%
     mutate(
       cell = cellFromRowCol(fuelsRaster, Y, X),
-      FireZone = ifelse(!is.null(fireZoneRaster), fireZoneRaster[cell] %>% lookup(FireZoneTable$ID, FireZoneTable$Name), ""),
-      WeatherZone = ifelse(!is.null(weatherZoneRaster), weatherZoneRaster[cell] %>% lookup(WeatherZoneTable$ID, WeatherZoneTable$Name), ""),
+      FireZone = ifelse(!is.null(fireZoneRaster), fireZoneRaster[][cell] %>% lookup(FireZoneTable$ID, FireZoneTable$Name), ""),
+      WeatherZone = ifelse(!is.null(weatherZoneRaster), weatherZoneRaster[][cell] %>% lookup(WeatherZoneTable$ID, WeatherZoneTable$Name), ""),
       FuelType = fuelsRaster[cell] %>% pull %>% lookup(FuelType$ID, FuelType$Name)) %>%
     
     # Finally incorporate Lat and Long and add TimeStep manually
