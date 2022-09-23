@@ -277,7 +277,7 @@ growFire <- function(Iteration, FireID, data, Lat, Lon) {
         # Update count of valid fires
         fireCount <<- fireCount + 1
         
-        burnRaster <- classify(burnRaster, rcl = matrix(c(0L, 1L, NA_integer_, as.integer(FireID)), nrow = 2))
+        burnRaster <- classify(burnRaster, rcl = matrix(c(0L, NA_integer_), nrow = 1))
         
         # Update burnAccumulator in the parent function, ie runIteration()
         burnAccumulator <<- cover(burnAccumulator, burnRaster)
