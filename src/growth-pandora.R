@@ -158,6 +158,17 @@ latlonFromRowCol <- function(x, row, col) {
     return
 }
 
+# Function to convert from latlong to cell index
+cellFromLatLong <- function(x, lat, long) {
+  # Convert list of lat and long to SpatVector, reproject to source crs
+  points <- matrix(c(long, lat), ncol = 2) %>%
+    vect(crs = "+proj=longlat +datum=WGS84 +no_defs") %>%
+    project(x)
+  
+  # Get vector of cell ID's from points
+  return(cells(x, points)[, "cell"])
+}
+
 # Function to call Pandora on the (global) parameter file
 runPandora <- function() {
   # Note than pandora can't handle spaces in the paramter file path
@@ -359,11 +370,7 @@ weatherStationElevation <- ifelse(!is.null(elevationRaster), elevationRaster[flo
 # Convert ignition location to lat/long
 # Keep only indexes and location
 ignitionLocation <- DeterministicIgnitionLocation %>%
-  mutate(
-    latlon = latlonFromRowCol(fuelsRaster, Y, X),
-    latlon = asplit(latlon, 1)) %>%
-  unnest_wider(latlon) %>%
-  dplyr::select(Iteration, FireID, Lat =y, Lon = x)
+  dplyr::select(Iteration, FireID, Lat = Latitude, Lon = Longitude)
 
 # Combine deterministic input tables ----
 fireGrowthInputs <- DeterministicBurnCondition %>%
@@ -457,20 +464,19 @@ if(OutputOptions$FireStatistics) {
     # Determine Fire and Weather Zones if the rasters are present, as well as fuel type of ignition location
     left_join(DeterministicIgnitionLocation, by = c("Iteration", "FireID")) %>%
     mutate(
-      cell = cellFromRowCol(fuelsRaster, Y, X),
+      cell = cellFromLatLong(fuelsRaster, Latitude, Longitude),
       FireZone = ifelse(!is.null(fireZoneRaster), fireZoneRaster[][cell] %>% lookup(FireZoneTable$ID, FireZoneTable$Name), ""),
       WeatherZone = ifelse(!is.null(weatherZoneRaster), weatherZoneRaster[][cell] %>% lookup(WeatherZoneTable$ID, WeatherZoneTable$Name), ""),
       FuelType = fuelsRaster[cell] %>% pull %>% lookup(FuelType$ID, FuelType$Name)) %>%
     
     # Finally incorporate Lat and Long and add TimeStep manually
-    # - SyncoSim currently expects integers for X, Y, let's leave X, Y as Row, Col for now
     mutate(Timestep = 0,
            ResampleStatus = case_when(Area >= minimumFireSize ~ "Kept",
                                       Area <  minimumFireSize ~ "Discarded",
                                       is.na(Area)             ~ "Not Used")) %>%
     
     # Clean up
-    dplyr::select(Iteration, Timestep, FireID, X, Y, Season, Cause, FireZone, WeatherZone, FuelType, FireDuration, HoursBurning, Area, ResampleStatus) %>%
+    dplyr::select(Iteration, Timestep, FireID, Latitude, Longitude, Season, Cause, FireZone, WeatherZone, FuelType, FireDuration, HoursBurning, Area, ResampleStatus) %>%
     as.data.frame()
     
   # Output if there are records to save
