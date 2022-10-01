@@ -25,6 +25,9 @@ DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBur
 FuelType <- datasheet(myScenario, "burnP3Plus_FuelType")
 FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F)
 ValidFuelCodes <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCode") %>% pull()
+GreenUp <- datasheet(myScenario, "burnP3Plus_GreenUp", lookupsAsFactors = F, optional = T)
+Curing <- datasheet(myScenario, "burnP3Plus_Curing", lookupsAsFactors = F, optional = T)
+FuelLoad <- datasheet(myScenario, "burnP3Plus_FuelLoad", lookupsAsFactors = F, optional = T)
 OutputOptions <- datasheet(myScenario, "burnP3Plus_OutputOption")
 OutputOptionsSpatial <- datasheet(myScenario, "burnP3Plus_OutputOptionSpatial")
 
@@ -58,6 +61,16 @@ if(nrow(OutputOptionsSpatial) == 0) {
 if(nrow(ResampleOption) == 0) {
   ResampleOption[1,] <- c(0,0)
   saveDatasheet(myScenario, ResampleOption, "burnP3Plus_FireResampleOption")
+}
+
+if(nrow(GreenUp) == 0) {
+  GreenUp[1,] <- c(NA,TRUE)
+  saveDatasheet(myScenario, GreenUp, "burnP3Plus_GreenUp")
+} else if (is.character(GreenUp$GreenUp)) GreenUp$GreenUp <- GreenUp$GreenUp != "No"
+
+if(nrow(Curing) == 0) {
+  Curing[1,] <- c(NA,75L)
+  saveDatasheet(myScenario, Curing, "burnP3Plus_Curing")
 }
 
 ## Check raster inputs for consistency ----
@@ -108,6 +121,9 @@ if(nrow(FuelTypeCrosswalk) > 0) {
 } else
   FuelType <- FuelType %>%
     mutate(Code = Name)
+
+# Decide whether or not to manually set grass fuel loading 
+setFuelLoad <- nrow(FuelLoad) > 0
 
 ## Error check fuels ----
 
@@ -248,7 +264,7 @@ generateWeatherFile <- function(weatherData) {
 }
 
 # Function to generate Pandora parameter file based on rows of the fireGrowthInputs dataframe
-generateParameterFile <- function(Iteration, FireID, Lat, Lon, data) {
+generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
   # Define a unique identifier to name files
   fileTag <- str_c("it", Iteration, ".fid", FireID)
   
@@ -269,6 +285,9 @@ generateParameterFile <- function(Iteration, FireID, Lat, Lon, data) {
     str_c("Init_hour 13"),
     str_c("FFMC_Method 5"),
     str_c("Threads 1"),
+    str_c("Greenup ", GreenUp %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(GreenUp) %>% pluck(1) %>% as.numeric),
+    str_c("Grass_Curing ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(Curing) %>% pluck(1)),
+    if(setFuelLoad){ str_c("Fuel_Load_GridFile", FuelLoad %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1)) } else NA,
     str_c("Duration  ", max(data$BurnDay) * 24L - 1),
     str_c("Export_Every ", max(data$BurnDay) * 24L - 1)) %>%
     discard(is.na)
@@ -292,7 +311,7 @@ generateParameterFile <- function(Iteration, FireID, Lat, Lon, data) {
 ### Wrapper functions ----
 
 # Function to grow a single fire
-growFire <- function(Iteration, FireID, data, Lat, Lon) {
+growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
   # Check if enough fires have been sampled for the given iteration
   if(fireCount < DeterministicIgnitionCount[as.character(Iteration)]) {
     # Indicate progress
@@ -300,7 +319,7 @@ growFire <- function(Iteration, FireID, data, Lat, Lon) {
     
     # Generate relevant input files
     generateWeatherFile(data)
-    fileTag <- generateParameterFile(Iteration, FireID, Lat, Lon, data)
+    fileTag <- generateParameterFile(Iteration, FireID, Season, Lat, Lon, data)
     
     # Grow the given fire
     runPandora()
@@ -360,7 +379,12 @@ runIteration <- function(Iteration, data) {
     # Save map of accumulated burn maps
     burnMap <- burnAccumulator %>%
       mask(fuelsRaster) %>%
-      writeRaster(str_c(accumulatorOutputFolder, "/it", Iteration, ".tif"), overwrite = T, NAflag = -9999)
+      writeRaster(str_c(accumulatorOutputFolder, "/it", Iteration, ".tif"),
+                  overwrite = T,
+                  NAflag = -9999,
+                  wopt = list(filetype = "GTiff",
+                              datatype = "INT4S",
+                              gdal = c("COMPRESS=DEFLATE","ZLEVEL=9","PREDICTOR=2")))
   }
   
   # Reset fire count
@@ -400,7 +424,24 @@ weatherStationElevation <- ifelse(!is.null(elevationRaster), elevationRaster[flo
 # Convert ignition location to lat/long
 # Keep only indexes and location
 ignitionLocation <- DeterministicIgnitionLocation %>%
-  dplyr::select(Iteration, FireID, Lat = Latitude, Lon = Longitude)
+  dplyr::select(Iteration, FireID, Season, Lat = Latitude, Lon = Longitude)
+
+# Generate fuel loading maps if used
+# - It seems that pandora can only set fuel loading using geotiffs, so these must be created based on the season-specific fuel loading value chosen by the user
+# - tempfile is used to catch season names that are not acceptable as filenames
+if (setFuelLoad) {
+  FuelLoad <- FuelLoad %>%
+    mutate(FileName = map_chr(Season, ~tempfile(pattern = "FuelLoad-", tmpdir = tempDir, fileext = ".tif")))
+  
+  for(i in seq(nrow(FuelLoad)))
+    rast(fuelsRaster, vals = FuelLoad$FuelLoad[i]) %>%
+      writeRaster(FuelLoad$FileName[i],
+                  overwrite = T,
+                  NAflag = -9999,
+                  wopt = list(filetype = "GTiff",
+                              datatype = "FLT4S",
+                              gdal = c("COMPRESS=DEFLATE","ZLEVEL=9","PREDICTOR=2")))
+}
 
 # Combine deterministic input tables ----
 fireGrowthInputs <- DeterministicBurnCondition %>%
