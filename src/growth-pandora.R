@@ -9,6 +9,19 @@ progressBar(type = "message", message = "Preparing inputs...")
 # Initialize first breakpoint for timing code
 currentBreakPoint <- proc.time()
 
+## Check Prometheus installation ----
+if(.Platform$OS.type == "unix") 
+  stop("Prometheus is currently not supported on Unix systems.")
+
+prometheusLocation <- Sys.which("prometheus.exe")
+if (prometheusLocation == "")
+  stop("Could not find the Prometheus installation location. Please check that Prometheus is installed correctly.")
+
+prometheusVersion <- str_c('powershell "(Get-Item -path ', prometheusLocation, ').VersionInfo.ProductVersion"') %>%
+  shell(intern = T)
+if (prometheusVersion != "6,2021,12,03")
+  stop("Could not find the correct version of Prometheus. Please ensure that you have installed Prometheus v2021.12.03.")
+
 ## Connect to SyncroSim ----
 
 myScenario <- scenario()
