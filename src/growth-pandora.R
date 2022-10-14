@@ -25,6 +25,7 @@ DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBur
 FuelType <- datasheet(myScenario, "burnP3Plus_FuelType")
 FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F)
 ValidFuelCodes <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCode") %>% pull()
+WindGrid <- datasheet(myScenario, "burnP3Plus_WindGrid", lookupsAsFactors = F, optional = T)
 GreenUp <- datasheet(myScenario, "burnP3Plus_GreenUp", lookupsAsFactors = F, optional = T)
 Curing <- datasheet(myScenario, "burnP3Plus_Curing", lookupsAsFactors = F, optional = T)
 FuelLoad <- datasheet(myScenario, "burnP3Plus_FuelLoad", lookupsAsFactors = F, optional = T)
@@ -121,6 +122,9 @@ if(nrow(FuelTypeCrosswalk) > 0) {
 } else
   FuelType <- FuelType %>%
     mutate(Code = Name)
+
+# Decide whether or not to manually set grass fuel loading 
+useWindGrid <- nrow(WindGrid) > 0
 
 # Decide whether or not to manually set grass fuel loading 
 setFuelLoad <- nrow(FuelLoad) > 0
@@ -285,6 +289,7 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
     str_c("Init_hour 13"),
     str_c("FFMC_Method 5"),
     str_c("Threads 1"),
+    if(useWindGrid){ WindGridParameterStrings } else NA,
     str_c("Greenup ", GreenUp %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(GreenUp) %>% pluck(1) %>% as.numeric),
     str_c("Grass_Curing ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(Curing) %>% pluck(1)),
     if(setFuelLoad){ str_c("Fuel_Load_GridFile", FuelLoad %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1)) } else NA,
@@ -425,6 +430,20 @@ weatherStationElevation <- ifelse(!is.null(elevationRaster), elevationRaster[flo
 # Keep only indexes and location
 ignitionLocation <- DeterministicIgnitionLocation %>%
   dplyr::select(Iteration, FireID, Season, Lat = Latitude, Lon = Longitude)
+
+# Copy wind grids if needed
+if (useWindGrid) {
+  # Todo: ensure filepaths are full, copy to temp folder?
+  WindGridParameterStrings <- WindGrid %>%
+    pivot_longer(cols = -"WindSpeed", names_to = c("Variable", "Direction"), names_prefix = "Wind", values_to = "FileName", names_pattern = "([SD][a-z]*)([NSEW].*)") %>%
+    transmute(
+      parameter = lookup(Variable, c("Speed", "Direction"), c("WSgrid", "WDgrid")),
+      sector = lookup(Direction, c("North", "NorthEast", "East", "SouthEast", "South", "SouthWest", "West", "NorthWest"), 1:8),
+      speed = WindSpeed,
+      file = FileName %>% str_replace_all("\\\\", "/")) %>%
+    unite("parameterFileLine", sep = " ") %>%
+    pull
+}
 
 # Generate fuel loading maps if used
 # - It seems that pandora can only set fuel loading using geotiffs, so these must be created based on the season-specific fuel loading value chosen by the user
