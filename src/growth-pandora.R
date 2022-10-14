@@ -44,6 +44,7 @@ Curing <- datasheet(myScenario, "burnP3Plus_Curing", lookupsAsFactors = F, optio
 FuelLoad <- datasheet(myScenario, "burnP3Plus_FuelLoad", lookupsAsFactors = F, optional = T)
 OutputOptions <- datasheet(myScenario, "burnP3Plus_OutputOption")
 OutputOptionsSpatial <- datasheet(myScenario, "burnP3Plus_OutputOptionSpatial")
+OutputOptionsSpatialPrometheus <- datasheet(myScenario, "burnP3PlusPrometheus_OutputOptionSpatial")
 
 # Import relevant rasters
 # - Note that datasheetRaster is avoided as it requires rgdal
@@ -70,6 +71,12 @@ if(nrow(OutputOptionsSpatial) == 0) {
   updateRunLog("No spatial output options chosen. Defaulting to keeping all spatial outputs.", type = "info")
   OutputOptionsSpatial[1,] <- rep(TRUE, length(OutputOptionsSpatial[1,]))
   saveDatasheet(myScenario, OutputOptionsSpatial, "burnP3Plus_OutputOptionSpatial")
+}
+
+if(nrow(OutputOptionsSpatialPrometheus) == 0) {
+  updateRunLog("No Prometheus-specific spatial output options chosen. Defaulting to keeping no secondary spatial outputs.", type = "info")
+  OutputOptionsSpatialPrometheus[1,] <- rep(FALSE, length(OutputOptionsSpatialPrometheus[1,]))
+  saveDatasheet(myScenario, OutputOptionsSpatialPrometheus, "burnP3PlusPrometheus_OutputOptionSpatial")
 }
 
 if(nrow(ResampleOption) == 0) {
@@ -117,11 +124,17 @@ checkSpatialInput <- function(x, name, checkProjection = T, warnOnly = F) {
 # Check optional inputs
 checkSpatialInput(elevationRaster, "Elevation")
 
+## Set constants ----
+
+# Names and codes of Prometheus-specific secondary outputs
+outputComponentNames <- c("RateOfSpread", "FireIntensity", "SpreadDirection", "SurfaceFuelConsumption", "CrownFractionBurned", "CrownFractionConsumed", "TotalFuelConsumption")
+outputComponentCodes <- c("ros", "fi", "raz", "sfc", "cfb", "cfc", "tfc")
+
 ## Extract relevant parameters ----
 
 # Burn maps must be kept to generate summarized maps later, this boolean summarizes
 # whether or not burn maps are needed
-saveBurnMaps <- any(OutputOptionsSpatial$BurnMap, OutputOptionsSpatial$BurnProbability, OutputOptionsSpatial$BurnCount)
+saveBurnMaps <- any(OutputOptionsSpatial$BurnMap, OutputOptionsSpatial$BurnProbability, OutputOptionsSpatial$BurnCount, any(OutputOptionsSpatialPrometheus))
 
 minimumFireSize <- ResampleOption$MinimumFireSize
 
@@ -180,9 +193,11 @@ parameterFile <- file.path(tempDir, "parameters.txt")
 gridOutputFolder <- file.path(tempDir, "grids")
 shapeOutputFolder <- file.path(tempDir, "shapes")
 accumulatorOutputFolder <- file.path(tempDir, "accumulator")
+secondaryOutputFolder <- file.path(tempDir, "secondary")
 dir.create(gridOutputFolder, showWarnings = F)
 dir.create(shapeOutputFolder, showWarnings = F)
 dir.create(accumulatorOutputFolder, showWarnings = F)
+dir.create(secondaryOutputFolder, showWarnings = F)
 
 # Create placeholder rasters for potential outputs
 burnAccumulator <- rast(fuelsRaster)
@@ -318,7 +333,7 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
   if(saveBurnMaps)
     parameterFileText <- parameterFileText %>%
       c(str_c("Out_GridFiles ", file.path(gridOutputFolder, fileTag)),
-        str_c("Out_Components burn"))
+        str_c("Out_Components ", outputComponents))
 
   # Save parameter file
   writeLines(parameterFileText, parameterFile)
@@ -359,6 +374,31 @@ growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
         
         # Update burnAccumulator in the parent function, ie runIteration()
         burnAccumulator <<- cover(burnAccumulator, burnRaster)
+        
+        for (component in outputComponentsToKeep) {
+          inputComponentFileName <-  str_c(gridOutputFolder, "/", fileTag, "_", lookup(component, outputComponentNames, outputComponentCodes), ".asc")
+          if (file.exists(inputComponentFileName)) {
+            # Generate output file name
+            outputComponentFileName <-  file.path(secondaryOutputFolder, basename(inputComponentFileName) %>% str_replace("asc", "tif"))
+            
+            # Rewrite as GeoTiff to output folder
+            rast(inputComponentFileName) %>%
+              writeRaster(outputComponentFileName,
+                          overwrite = T,
+                          NAflag = -9999,
+                          wopt = list(filetype = "GTiff",
+                                      datatype = "INT4S",
+                                      gdal = c("COMPRESS=DEFLATE","ZLEVEL=9","PREDICTOR=2")))
+            
+            # Update corresponding table in SyncroSim
+            outputComponentTables[[component]] <<- rbind(outputComponentTables[[component]],
+                                                         data.frame(Iteration = Iteration,
+                                                                    Timestep = FireID, # TODO: Separate out timestep and fire ID
+                                                                    FireID = FireID,
+                                                                    FileName = outputComponentFileName))
+          }
+          unlink(inputComponentFileName) 
+        }
       }
       
       # Remove the individual burn raster to limit disk usage
@@ -456,6 +496,25 @@ if (useWindGrid) {
       file = FileName %>% str_replace_all("\\\\", "/")) %>%
     unite("parameterFileLine", sep = " ") %>%
     pull
+}
+
+# Decide which burn components to keep
+# - Parse table
+outputComponentsToKeep <- OutputOptionsSpatialPrometheus %>%
+  pivot_longer(everything(), names_to = "component", values_to = "keep") %>%
+  filter(keep) %>%
+  pull(component)
+
+# - Translate to input keywords as expected by Pandora, prepend burn map keyword
+outputComponents <- outputComponentsToKeep %>%
+  lookup(old = outputComponentNames, new = outputComponentCodes) %>%
+  str_c(collapse = " ") %>%
+  str_c("burn ", .)
+
+# - Initialize list of tables to hold outputs
+outputComponentTables <- list()
+for(component in outputComponentsToKeep) {
+  outputComponentTables[[component]] <- data.frame()
 }
 
 # Generate fuel loading maps if used
@@ -607,6 +666,12 @@ if(saveBurnMaps) {
   # Output if there are records to save
   if(nrow(OutputBurnMap) > 0)
     saveDatasheet(myScenario, OutputBurnMap, "burnP3Plus_OutputBurnMap", append = T)
+  
+  # Output secondary outputs if present
+  if (length(outputComponentsToKeep) > 0)
+    for(i in seq_along(outputComponentTables))
+      if(nrow(outputComponentTables[[i]]) > 0)
+        saveDatasheet(myScenario, outputComponentTables[[i]], str_c("burnP3PlusPrometheus_Output", outputComponentsToKeep[i], "Map"))
   
   updateRunLog("Finished collecting burn maps in ", updateBreakpoint())
 }
