@@ -6,7 +6,7 @@
   extendsPackage="burnP3Plus"
   version="0.2.7">
 	<transformers>
-		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
+		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
 			<datafeeds>
 				<datafeed name="FuelCode" displayName="Prometheus Fuel Code List" dataScope="Project">
 					<datasheets>
