@@ -4,7 +4,7 @@
   displayName="Prometheus fire growth model add-on package for Burn-P3 Plus"
   isAddOn="True"
   extendsPackage="burnP3Plus"
-  version="0.3.1">
+  version="0.3.2">
 	<transformers>
 		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
 			<datafeeds>
@@ -311,8 +311,26 @@
 				<datafeed name="OutputTotalFuelConsumptionMap" type="Output"/>
 			</pipeline>
 		</transformer>
+		<transformer name="RateOfSpreadMap" displayName="Rate of Spread Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputRateOfSpreadMap" column="FileName" isFolderExport="True"/>
+		<transformer name="FireIntensityMap" displayName="Fire Intensity Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputFireIntensityMap" column="FileName" isFolderExport="True"/>
+		<transformer name="SpreadDirectionMap" displayName="Spread Direction Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputSpreadDirectionMap" column="FileName" isFolderExport="True"/>
+		<transformer name="SurfaceFuelConsumptionMap" displayName="Surface Fuel Consumption Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputSurfaceFuelConsumptionMap" column="FileName" isFolderExport="True"/>
+		<transformer name="CrownFractionBurnedMap" displayName="Crown Fraction Burned Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputCrownFractionBurnedMap" column="FileName" isFolderExport="True"/>
+		<transformer name="CrownFractionConsumedMap" displayName="Crown Fraction Consumed Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputCrownFractionConsumedMap" column="FileName" isFolderExport="True"/>
+		<transformer name="TotalFuelConsumptionMap" displayName="Total Fuel Consumption Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputTotalFuelConsumptionMap" column="FileName" isFolderExport="True"/>
 	</transformers>
 	<layouts>
+		<layout name="coreforms_ResultTransformers">
+			<group name="Export">
+				<item name="RateOfSpreadMap" displayName="Rate of Spread Maps"/>
+				<item name="FireIntensityMap" displayName="Fire Intensity Maps"/>
+				<item name="SpreadDirectionMap" displayName="Spread Direction Maps"/>
+				<item name="SurfaceFuelConsumptionMap" displayName="Surface Fuel Consumption Maps"/>
+				<item name="CrownFractionBurnedMap" displayName="Crown Fraction Burned Maps"/>
+				<item name="CrownFractionConsumedMap" displayName="Crown Fraction Consumed Maps"/>
+				<item name="TotalFuelConsumptionMap" displayName="Total Fuel Consumption Maps"/>
+			</group>
+		</layout>
 		<layout name="corestimeforms_Maps">
 			<group name="PrometheusSecondaryOutputs" displayName="Prometheus Secondary Outputs">
 				<item name="ros" displayName="Rate of Spread" dataSheet="OutputRateOfSpreadMap" column="FileName"/>
