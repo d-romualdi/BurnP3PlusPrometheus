@@ -36,15 +36,15 @@ DeterministicIgnitionCount <- datasheet(myScenario, "burnP3Plus_DeterministicIgn
 DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T) %>% unique %>% filter(Iteration %in% iterations)
 DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T) %>% unique %>% filter(Iteration %in% iterations)
 FuelType <- datasheet(myScenario, "burnP3Plus_FuelType")
-FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F)
+FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F, optional = T)
 ValidFuelCodes <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCode") %>% pull()
 WindGrid <- datasheet(myScenario, "burnP3Plus_WindGrid", lookupsAsFactors = F, optional = T)
 GreenUp <- datasheet(myScenario, "burnP3Plus_GreenUp", lookupsAsFactors = F, optional = T)
 Curing <- datasheet(myScenario, "burnP3Plus_Curing", lookupsAsFactors = F, optional = T)
 FuelLoad <- datasheet(myScenario, "burnP3Plus_FuelLoad", lookupsAsFactors = F, optional = T)
-OutputOptions <- datasheet(myScenario, "burnP3Plus_OutputOption")
-OutputOptionsSpatial <- datasheet(myScenario, "burnP3Plus_OutputOptionSpatial")
-OutputOptionsSpatialPrometheus <- datasheet(myScenario, "burnP3PlusPrometheus_OutputOptionSpatial")
+OutputOptions <- datasheet(myScenario, "burnP3Plus_OutputOption", optional = T)
+OutputOptionsSpatial <- datasheet(myScenario, "burnP3Plus_OutputOptionSpatial", optional = T)
+OutputOptionsSpatialPrometheus <- datasheet(myScenario, "burnP3PlusPrometheus_OutputOptionSpatial", optional = T)
 
 # Import relevant rasters
 # - Note that datasheetRaster is avoided as it requires rgdal
