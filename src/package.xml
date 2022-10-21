@@ -4,7 +4,7 @@
   displayName="Prometheus fire growth model add-on package for Burn-P3 Plus"
   isAddOn="True"
   extendsPackage="burnP3Plus"
-  version="0.3.2">
+  version="0.3.3">
 	<transformers>
 		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
 			<datafeeds>
@@ -164,8 +164,11 @@
 								<column name="FuelCodeCrosswalkID" dataType="Integer" isPrimary="True"/>
 								<column name="ProjectID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="FuelType" displayName="Fuel Type" dataType="Integer" validationType="Datasheet" formula1="burnP3Plus_FuelType" allowDbNull="False"/>
-								<column name="Code" displayName="Cell2Fire Fuel Code" dataType="Integer" validationType="Datasheet" formula1="FuelCode"/>
+								<column name="Code" displayName="Prometheus Fuel Code" dataType="Integer" validationType="Datasheet" formula1="FuelCode"/>
 							</columns>
+							<validations>
+                <validation validationType="Unique" columns="FuelType"/>
+              </validations>
 						</datasheet>
 					</datasheets>
 				</datafeed>
