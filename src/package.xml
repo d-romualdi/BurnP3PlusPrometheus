@@ -4,7 +4,7 @@
   displayName="Prometheus fire growth model add-on package for BurnP3+"
   isAddOn="True"
   extendsPackage="burnP3Plus"
-  version="0.4.1"
+  version="0.4.2"
   url="https://github.com/burnp3/burnp3plusprometheus">
 	<transformers>
 		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
@@ -158,9 +158,9 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="FuelCodeCrosswalk" displayName="Prometheus Fuel Code Crosswalk" dataScope="Project">
+				<datafeed name="FuelCodeCrosswalk" displayName="Fuel Code Crosswalk" dataScope="Project">
 					<datasheets>
-						<datasheet name="FuelCodeCrosswalk" displayName="Prometheus Fuel Code Crosswalk">
+						<datasheet name="FuelCodeCrosswalk" displayName="Fuel Code Crosswalk">
 							<columns>
 								<column name="FuelCodeCrosswalkID" dataType="Integer" isPrimary="True"/>
 								<column name="ProjectID" dataType="Integer" isCompositeIndex="True"/>
@@ -173,9 +173,9 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputOptionSpatial" displayName="Prometheus Spatial Output Options" dataScope="Scenario">
+				<datafeed name="OutputOptionSpatial" displayName="Secondary Outputs" dataScope="Scenario">
 					<datasheets>
-						<datasheet name="OutputOptionSpatial" displayName="Prometheus Spatial Output Options" isSingleRow="True">
+						<datasheet name="OutputOptionSpatial" displayName="Secondary Outputs" isSingleRow="True">
 							<columns>
 								<column name="OutputOptionSpatialID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
@@ -346,11 +346,11 @@
 				<item name="tfc" displayName="Total Fuel Consumption" dataSheet="OutputTotalFuelConsumptionMap" column="FileName"/>
 			</group>
 		</layout>
-		<layout name ="coreforms_ProjectDatafeeds">
-	  	<item name="FuelCodeCrosswalk"/>
+		<layout name ="coreforms_ProjectDatafeeds" appendTo="burnP3Plus_FuelDefinition">
+	  	<item name="FuelCodeCrosswalk" displayName="Prometheus Crosswalk"/>
 	  </layout>
-	  <layout name="coreforms_ScenarioDatafeeds">
-			<item name="OutputOptionSpatial" showIf="inPipeline"/>
+	  <layout name="coreforms_ScenarioDatafeeds" appendTo="burnP3Plus_OutputOption">
+			<item name="OutputOptionSpatial" displayName="Prometheus" showIf="inPipeline"/>
 	  </layout>
 	</layouts>
 	<updateProvider 
