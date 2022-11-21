@@ -324,8 +324,8 @@
 		<transformer name="TotalFuelConsumptionMap" displayName="Total Fuel Consumption Map by Iteration and Fire ID" className="SyncroSim.StochasticTime.Forms.StochasticTimeExportTransformer" classAssembly="SyncroSim.StochasticTime.Forms" dataSheet="OutputTotalFuelConsumptionMap" column="FileName" isFolderExport="True"/>
 	</transformers>
 	<layouts>
-		<layout name="coreforms_ResultTransformers">
-			<group name="Export">
+		<layout name="coreforms_ResultTransformers" appendTo="burnP3Plus_Export">
+			<group name="Export" displayName="Prometheus">
 				<item name="RateOfSpreadMap" displayName="Rate of Spread Maps"/>
 				<item name="FireIntensityMap" displayName="Fire Intensity Maps"/>
 				<item name="SpreadDirectionMap" displayName="Spread Direction Maps"/>
