@@ -319,7 +319,7 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
     str_c("Threads 1"),
     if(useWindGrid){ WindGridParameterStrings } else NA,
     str_c("Greenup ", GreenUp %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(GreenUp) %>% pluck(1) %>% as.numeric),
-    str_c("Grass_Curing ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(Curing) %>% pluck(1)),
+    #str_c("Grass_Curing ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(Curing) %>% pluck(1)), # TODO: Reincorporate after fixing Pandora grass curing bug
     if(setFuelLoad){ str_c("Fuel_Load_GridFile", FuelLoad %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1)) } else NA,
     str_c("Duration  ", max(data$BurnDay) * 24L - 1),
     str_c("Export_Every ", max(data$BurnDay) * 24L - 1)) %>%
