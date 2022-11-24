@@ -152,8 +152,9 @@ if(nrow(FuelTypeCrosswalk) > 0) {
 # Decide whether or not to manually set grass fuel loading 
 useWindGrid <- nrow(WindGrid) > 0
 
-# Decide whether or not to manually set grass fuel loading 
+# Decide whether or not to manually set grass fuel loading and curing
 setFuelLoad <- nrow(FuelLoad) > 0
+setGrassCuring <- nrow(Curing) > 0
 
 ## Error check fuels ----
 
@@ -319,8 +320,8 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
     str_c("Threads 1"),
     if(useWindGrid){ WindGridParameterStrings } else NA,
     str_c("Greenup ", GreenUp %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(GreenUp) %>% pluck(1) %>% as.numeric),
-    #str_c("Grass_Curing ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(Curing) %>% pluck(1)), # TODO: Reincorporate after fixing Pandora grass curing bug
-    if(setFuelLoad){ str_c("Fuel_Load_GridFile", FuelLoad %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1)) } else NA,
+    if(setGrassCuring){ str_c("%Curing_GridFile ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1)) } else NA,
+    if(setFuelLoad){ str_c("Fuel_Load_GridFile ", FuelLoad %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1)) } else NA,
     str_c("Duration  ", max(data$BurnDay) * 24L - 1),
     str_c("Export_Every ", max(data$BurnDay) * 24L - 1)) %>%
     discard(is.na)
@@ -521,12 +522,34 @@ for(component in outputComponentsToKeep) {
 # - It seems that pandora can only set fuel loading using geotiffs, so these must be created based on the season-specific fuel loading value chosen by the user
 # - tempfile is used to catch season names that are not acceptable as filenames
 if (setFuelLoad) {
-  FuelLoad <- FuelLoad %>%
+    FuelLoad <- FuelLoad %>%
     mutate(FileName = map_chr(Season, ~tempfile(pattern = "FuelLoad-", tmpdir = tempDir, fileext = ".tif")))
   
+  maskValues <- FuelType %>%
+    filter(str_detect(Code, "O-1")) %>%
+    pull(ID)
+  
   for(i in seq(nrow(FuelLoad)))
-    rast(fuelsRaster, vals = FuelLoad$FuelLoad[i]) %>%
+    rast(fuelsRaster, vals = FuelLoad$FuelLoad[i]) %>% 
+      mask(fuelsRaster, inverse = T, maskvalues = maskValues) %>%
       writeRaster(FuelLoad$FileName[i],
+                  overwrite = T,
+                  NAflag = -9999,
+                  wopt = list(filetype = "GTiff",
+                              datatype = "FLT4S",
+                              gdal = c("COMPRESS=DEFLATE","ZLEVEL=9","PREDICTOR=2")))
+}
+
+# Generate grass curing maps if used
+# - It seems that pandora can only set fuel loading using geotiffs, so these must be created based on the season-specific fuel loading value chosen by the user
+# - tempfile is used to catch season names that are not acceptable as filenames
+if (setGrassCuring) {
+  Curing <- Curing %>%
+    mutate(FileName = map_chr(Season, ~tempfile(pattern = "Cuing-", tmpdir = tempDir, fileext = ".tif")))
+
+  for(i in seq(nrow(Curing)))
+    rast(fuelsRaster, vals = Curing$Curing[i]) %>% 
+      writeRaster(Curing$FileName[i],
                   overwrite = T,
                   NAflag = -9999,
                   wopt = list(filetype = "GTiff",
