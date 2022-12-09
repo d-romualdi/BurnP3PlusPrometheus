@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template
+  name="glacier-example"
+  displayName="Glacier Example"
+  description="
+    {br}Library for the BurnP3+ Prometheus SyncroSim add-on package." 
+  location="https://s3.us-west-2.amazonaws.com/apexrms.com.syncrosim.templates/BurnP3PlusPrometheus/v0.4.4/glacier-example.zip"
+  liveUpdate="True">
+</template>
