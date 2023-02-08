@@ -363,7 +363,16 @@ growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
     if(file.exists(burnRasterFile)) {
       # Read in the burn grid, reclassify zero as NA, 1 as Fire ID
       burnRaster <- rast(burnRasterFile)
-      
+      if(OutputOptionsSpatial$AllPerim){
+        writeRaster(burnRaster,
+                    filename = newfolderforallperims,
+                    overwrite = T,
+                    NAflag = -9999,
+                    wopt = list(filetype = "GTiff",
+                                datatype = "INT4S",
+                                gdal = c("COMPRESS=DEFLATE","ZLEVEL=9","PREDICTOR=2")))
+      }
+
       area <- freq(burnRaster, value = 1, usenames = T)$count
       
       # Check if fire meets minimum size
