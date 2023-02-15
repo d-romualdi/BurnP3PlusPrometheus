@@ -195,10 +195,12 @@ gridOutputFolder <- file.path(tempDir, "grids")
 shapeOutputFolder <- file.path(tempDir, "shapes")
 accumulatorOutputFolder <- file.path(tempDir, "accumulator")
 secondaryOutputFolder <- file.path(tempDir, "secondary")
+allPerimOutputFolder <- file.path(tempDir,"all_perim")
 dir.create(gridOutputFolder, showWarnings = F)
 dir.create(shapeOutputFolder, showWarnings = F)
 dir.create(accumulatorOutputFolder, showWarnings = F)
 dir.create(secondaryOutputFolder, showWarnings = F)
+dir.create(allPerimOutputFolder, showWarnings = F)
 
 # Create placeholder rasters for potential outputs
 burnAccumulator <- rast(fuelsRaster)
@@ -365,7 +367,7 @@ growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
       burnRaster <- rast(burnRasterFile)
       if(OutputOptionsSpatial$AllPerim){
         writeRaster(burnRaster,
-                    filename = newfolderforallperims,
+                    filename = str_c(allPerimOutputFolder, "/it", Iteration,"_fire_", FireIDs[i], ".tif"),
                     overwrite = T,
                     NAflag = -9999,
                     wopt = list(filetype = "GTiff",
@@ -727,6 +729,27 @@ if(OutputOptionsSpatial$BurnPerimeter) {
     saveDatasheet(myScenario, OutputBurnPerimeter, "burnP3Plus_OutputFirePerimeter", append = T)
   
   updateRunLog("Finished collecting burn perimeters in ", updateBreakpoint())
+}
+
+## All Perims ----
+if(OutputOptionsSpatial$AllPerim){
+  progressBar(type = "message", message = "Saving individual burn maps...")
+
+  # Build table of burn maps and save to SyncroSim
+  OutputAllPerim <- 
+    tibble(
+      FileName = list.files(allPerimOutputFolder, pattern = "*.tif", full.names = T),
+      Iteration = str_extract(FileName, "it\\d+") %>% str_sub(3) %>% as.integer,
+      FireID = str_extract(FileName, "fid\\d+") %>% str_sub(4) %>% as.integer,
+      Timestep = FireID) %>%
+    filter(Iteration %in% iterations) %>%
+    as.data.frame
+  
+  # Output if there are records to save
+  if(nrow(OutputAllPerim) > 0)
+    saveDatasheet(myScenario, OutputAllPerim, "burnP3Plus_OutputAllPerim", append = T)
+  
+  updateRunLog("Finished individual burn maps in ", updateBreakpoint())
 }
 
 # Remove grid outputs if present
