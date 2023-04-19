@@ -4,7 +4,7 @@
   displayName="Prometheus fire growth model add-on package for BurnP3+"
   isAddOn="True"
   extendsPackage="burnP3Plus"
-  version="0.4.4"
+  version="0.4.5"
   url="https://github.com/burnp3/burnp3plusprometheus">
 	<transformers>
 		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
@@ -305,6 +305,7 @@
 				<datafeed name="burnP3Plus_OutputFireStatistic" type="Output"/>
 				<datafeed name="burnP3Plus_OutputBurnMap" type="Output"/>
 				<datafeed name="burnP3Plus_OutputFirePerimeter" type="Output"/>
+				<datafeed name="burnP3Plus_OutputAllPerim" type="Output"/>
 				<datafeed name="OutputOptionSpatial" type="Input"/>
 				<datafeed name="OutputRateOfSpreadMap" type="Output"/>
 				<datafeed name="OutputFireIntensityMap" type="Output"/>
