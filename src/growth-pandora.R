@@ -357,14 +357,26 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
     } else {
       NA
     },
-    str_c("Greenup ", GreenUp %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(GreenUp) %>% pluck(1) %>% as.numeric()),
+    str_c("Greenup ", GreenUp %>%
+      filter(Season %in% c(season, NA)) %>%
+      arrange(Season) %>% pull(GreenUp) %>%
+      pluck(1) %>%
+      as.numeric()),
     if (setGrassCuring) {
-      str_c("%Curing_GridFile ", Curing %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1))
+      str_c("%Curing_GridFile ", Curing %>%
+        filter(Season %in% c(season, NA)) %>%
+        arrange(Season) %>%
+        pull(FileName) %>%
+        pluck(1))
     } else {
       NA
     },
     if (setFuelLoad) {
-      str_c("Fuel_Load_GridFile ", FuelLoad %>% filter(Season %in% c(season, NA)) %>% arrange(Season) %>% pull(FileName) %>% pluck(1))
+      str_c("Fuel_Load_GridFile ", FuelLoad %>%
+        filter(Season %in% c(season, NA)) %>%
+        arrange(Season) %>%
+        pull(FileName) %>%
+        pluck(1))
     } else {
       NA
     },
