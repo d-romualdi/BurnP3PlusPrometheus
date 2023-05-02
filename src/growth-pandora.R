@@ -334,7 +334,7 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
   # Build the parameter file line-by-line
   parameterFileText <- c(
     str_c("Fire_name ", fileTag),
-    #str_c("Projection_File ", fuelsRasterProjection),
+    # str_c("Projection_File ", fuelsRasterProjection),
     str_c("FBP_GridFile ", sources(fuelsRaster)),
     if (!is.null(elevationRaster)) {
       str_c("Elev_GridFile ", sources(elevationRaster))
@@ -381,10 +381,11 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
       NA
     },
     str_c("Duration  ", max(data$BurnDay) * 24L - 1),
-    if(OutputOptionsSpatial$AllPerim){
-    str_c("Export_Every ", 24L)}
-    else{
-    str_c("Export_Every ", max(data$BurnDay) * 24L - 1)}
+    if (OutputOptionsSpatial$AllPerim) {
+      str_c("Export_Every ", 24L)
+    } else {
+      str_c("Export_Every ", max(data$BurnDay) * 24L - 1)
+    }
   ) %>%
     discard(is.na)
 
@@ -430,7 +431,7 @@ growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
       # Read in the burn grid, reclassify zero as NA, 1 as Fire ID
       burnRaster <- rast(burnRasterFile)
       crs(burnRaster) <- crs(fuelsRaster)
-       
+
       if (OutputOptionsSpatial$AllPerim) {
         writeRaster(burnRaster,
           filename = str_c(allPerimOutputFolder, "/", fileTag, ".tif"),
@@ -642,7 +643,7 @@ if (setFuelLoad) {
 # - tempfile is used to catch season names that are not acceptable as filenames
 if (setGrassCuring) {
   Curing <- Curing %>%
-    mutate(FileName = map_chr(Season, ~ tempfile(pattern = "Cuing-", tmpdir = tempDir, fileext = ".tif")))
+    mutate(FileName = map_chr(Season, ~ tempfile(pattern = "Curing-", tmpdir = tempDir, fileext = ".tif")))
 
   for (i in seq(nrow(Curing))) {
     rast(fuelsRaster, vals = Curing$Curing[i]) %>%
@@ -858,5 +859,5 @@ if (OutputOptionsSpatial$AllPerim) {
 }
 
 # Remove grid outputs if present
-#unlink(gridOutputFolder, recursive = T, force = T)
+# unlink(gridOutputFolder, recursive = T, force = T)
 progressBar("end")
