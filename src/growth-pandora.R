@@ -334,7 +334,6 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
   # Build the parameter file line-by-line
   parameterFileText <- c(
     str_c("Fire_name ", fileTag),
-    # str_c("Projection_File ", fuelsRasterProjection),
     str_c("FBP_GridFile ", sources(fuelsRaster)),
     if (!is.null(elevationRaster)) {
       str_c("Elev_GridFile ", sources(elevationRaster))
@@ -551,12 +550,6 @@ runIteration <- function(Iteration, data) {
 updateRunLog("Finished parsing run inputs in ", updateBreakpoint())
 
 # Prepare shared inputs ----
-
-# Create a local copy of the fuels grid as ASCII and projection file
-# Pandora appears to require this format for the fuels grid, but tif is accepted for the elevation grid
-# writeRaster(fuelsRaster, fuelsRasterAscii, filetype = "AAIGrid", overwrite = T, NAflag = -9999, datatype = "INT2S")
-# crs(fuelsRaster) %>%
-#   cat(file = fuelsRasterProjection)
 
 # Reformat fuel lookup table
 FuelType %>%
@@ -859,5 +852,5 @@ if (OutputOptionsSpatial$AllPerim) {
 }
 
 # Remove grid outputs if present
-# unlink(gridOutputFolder, recursive = T, force = T)
+unlink(gridOutputFolder, recursive = T, force = T)
 progressBar("end")
