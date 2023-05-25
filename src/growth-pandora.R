@@ -334,8 +334,7 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
   # Build the parameter file line-by-line
   parameterFileText <- c(
     str_c("Fire_name ", fileTag),
-    str_c("Projection_File ", fuelsRasterProjection),
-    str_c("FBP_GridFile ", fuelsRasterAscii),
+    str_c("FBP_GridFile ", sources(fuelsRaster)),
     if (!is.null(elevationRaster)) {
       str_c("Elev_GridFile ", sources(elevationRaster))
     } else {
@@ -426,6 +425,8 @@ growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
     if (file.exists(burnRasterFile)) {
       # Read in the burn grid, reclassify zero as NA, 1 as Fire ID
       burnRaster <- rast(burnRasterFile)
+      crs(burnRaster) <- crs(fuelsRaster)
+
       if (OutputOptionsSpatial$AllPerim) {
         writeRaster(burnRaster,
           filename = str_c(allPerimOutputFolder, "/", fileTag, ".tif"),
@@ -546,12 +547,6 @@ updateRunLog("Finished parsing run inputs in ", updateBreakpoint())
 
 # Prepare shared inputs ----
 
-# Create a local copy of the fuels grid as ASCII and projection file
-# Pandora appears to require this format for the fuels grid, but tif is accepted for the elevation grid
-writeRaster(fuelsRaster, fuelsRasterAscii, filetype = "AAIGrid", overwrite = T, NAflag = -9999, datatype = "INT2S")
-crs(fuelsRaster) %>%
-  cat(file = fuelsRasterProjection)
-
 # Reformat fuel lookup table
 FuelType %>%
   transmute(
@@ -637,7 +632,7 @@ if (setFuelLoad) {
 # - tempfile is used to catch season names that are not acceptable as filenames
 if (setGrassCuring) {
   Curing <- Curing %>%
-    mutate(FileName = map_chr(Season, ~ tempfile(pattern = "Cuing-", tmpdir = tempDir, fileext = ".tif")))
+    mutate(FileName = map_chr(Season, ~ tempfile(pattern = "Curing-", tmpdir = tempDir, fileext = ".tif")))
 
   for (i in seq(nrow(Curing))) {
     rast(fuelsRaster, vals = Curing$Curing[i]) %>%
