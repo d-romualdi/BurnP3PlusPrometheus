@@ -380,11 +380,7 @@ generateParameterFile <- function(Iteration, FireID, season, Lat, Lon, data) {
       NA
     },
     str_c("Duration  ", max(data$BurnDay) * 24L - 1),
-    if (OutputOptionsSpatial$AllPerim) {
-      str_c("Export_Every ", 24L)
-    } else {
-      str_c("Export_Every ", max(data$BurnDay) * 24L - 1)
-    }
+    str_c("Export_Every ", max(data$BurnDay) * 24L - 1)
   ) %>%
     discard(is.na)
 
