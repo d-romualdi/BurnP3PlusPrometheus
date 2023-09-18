@@ -125,7 +125,8 @@ if (nrow(Curing) == 0) {
 ## Check raster inputs for consistency ----
 
 # Ensure fuels crs can be converted to Lat / Long
-tryCatch(fuelsRaster %>% project("+proj=longlat"), error = function(e) stop("Error parsing provided Fuels map. Cannot calculate Latitude and Longitude from provided Fuels map, please check CRS."))
+if(fuelsRaster %>% is.lonlat){stop("Incorrect coordinate system. Projected coordinate system required, please reproject your grids.")}
+tryCatch(fuelsRaster %>% project("EPSG:4326"), error = function(e) stop("Error parsing provided Fuels map. Cannot calculate Latitude and Longitude from provided Fuels map, please check CRS."))
 
 # Define function to check input raster for consistency
 checkSpatialInput <- function(x, name, checkProjection = T, warnOnly = F) {
@@ -295,7 +296,7 @@ latlonFromRowCol <- function(x, row, col) {
     {
       as.points(x, na.rm = F)[.]
     } %>%
-    project("+proj=longlat") %>%
+    project("EPSG:4326") %>%
     crds() %>%
     return()
 }
@@ -304,7 +305,7 @@ latlonFromRowCol <- function(x, row, col) {
 cellFromLatLong <- function(x, lat, long) {
   # Convert list of lat and long to SpatVector, reproject to source crs
   points <- matrix(c(long, lat), ncol = 2) %>%
-    vect(crs = "+proj=longlat +datum=WGS84 +no_defs") %>%
+    vect(crs = "EPSG:4326") %>%
     project(x)
 
   # Get vector of cell ID's from points
@@ -983,8 +984,8 @@ if (OutputOptionsSpatial$AllPerim) {
   OutputAllPerim <-
     tibble(
       FileName = list.files(allPerimOutputFolder, pattern = "*.tif", full.names = T),
-      Iteration = str_extract(FileName, "it\\d+") %>% str_sub(3) %>% as.integer(),
-      FireID = str_extract(FileName, "fid\\d+") %>% str_sub(4) %>% as.integer(),
+      Iteration = str_extract(FileName, "\\d+_fire") %>% str_sub(end = -6) %>% as.integer(),
+      FireID = str_extract(FileName, "\\d+.tif") %>% str_sub(end = -5) %>% as.integer(),
       Timestep = FireID
     ) %>%
     filter(Iteration %in% iterations) %>%
