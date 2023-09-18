@@ -444,7 +444,7 @@ growFire <- function(Iteration, FireID, Season, data, Lat, Lon) {
       area <- freq(burnRaster, value = 1, usenames = T)$count
 
       # Check if fire meets minimum size
-      if (area >= minimumFireSize) {
+      if (area * (xres(fuelsRaster) * yres(fuelsRaster) / 1e4) >= minimumFireSize) {
         # Update count of valid fires
         fireCount <<- fireCount + 1
 
