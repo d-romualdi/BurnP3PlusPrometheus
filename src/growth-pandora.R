@@ -37,15 +37,8 @@ iterations <- seq(RunControl$MinimumIteration, RunControl$MaximumIteration)
 # Load remaining datasheets
 BatchOption <- datasheet(myScenario, "burnP3Plus_BatchOption")
 ResampleOption <- datasheet(myScenario, "burnP3Plus_FireResampleOption")
-DeterministicIgnitionCount <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionCount", lookupsAsFactors = F, optional = T) %>%
-  unique() %>%
-  filter(Iteration %in% iterations)
-DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T) %>%
-  unique() %>%
-  filter(Iteration %in% iterations)
-DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T) %>%
-  unique() %>%
-  filter(Iteration %in% iterations)
+DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T) %>% unique()
+DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T) %>% unique()
 FuelType <- datasheet(myScenario, "burnP3Plus_FuelType")
 FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F, optional = T)
 ValidFuelCodes <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCode") %>% pull()
@@ -109,7 +102,8 @@ if(nrow(BatchOption) == 0) {
 }
 
 if (nrow(ResampleOption) == 0) {
-  ResampleOption[1, ] <- c(0, 0)
+  updateRunLog("No Minimum Fire Size chosen.\nDefaulting to a Minimum Fire Size of 1ha.\nPlease see the Fire Resampling Options table for more details.", type = "info")
+  ResampleOption[1, ] <- c(1, 0)
   saveDatasheet(myScenario, ResampleOption, "burnP3Plus_FireResampleOption")
 }
 
@@ -179,6 +173,52 @@ parameterFilePlaceHolders <- list(
 
 # Batch size for batched runs
 batchSize <- BatchOption$BatchSize
+
+# Determine which, if any, extra ignitions (in iteration 0) this job is responsible for burning
+extraIgnitionIDs <- DeterministicIgnitionLocation %>%
+    filter(Iteration == 0) %>%
+    pull(FireID)
+
+# Define function to determine if the current job is multiprocessed
+getRunContext <- function() {
+  libraryPath <- ssimEnvironment()$LibraryFilePath %>% normalizePath()
+  libraryName <- libraryPath %>% basename %>% {tools::file_path_sans_ext(.)}
+
+  # Libraries are identified as remote if the path includes the Parallel folder and library follows the Job-<jobid> naming convention
+  isParallel <- libraryPath %>%
+    str_split("/|(\\\\)") %>%
+    pluck(1) %>%
+    str_detect("Parallel") %>%
+    any %>%
+    `&`(str_detect(libraryName, "Job-\\d"))
+
+  # Return if false
+  if (!isParallel)
+    return(list(isParallel = F, numJobs = 1, jobIndex = 1))
+
+  # Otherwise parse number of jobs and current job index
+  numJobs <- libraryPath %>%
+    dirname() %>%
+    list.files("Job-\\d+.ssim.temp") %>%
+    length()
+  jobIndex <- str_extract(libraryName, "\\d+") %>% as.integer()
+
+  return(list(isParallel = T, numJobs = numJobs, jobIndex = jobIndex))
+}
+
+# Determine if jobs are being multiprocessed
+runContext <- getRunContext()
+
+# Determine which subset of the extra iterations this job is responsible for
+if(runContext$numJobs > 1)
+  extraIgnitionIDs <- split(extraIgnitionIDs, cut(seq_along(extraIgnitionIDs), runContext$numJobs, labels = F))[[runContext$jobIndex]]
+
+# Filter deterministic tables accordingly
+
+DeterministicIgnitionLocation <- DeterministicIgnitionLocation %>%
+  filter(Iteration %in% iterations | (Iteration == 0 & FireID %in% extraIgnitionIDs))
+DeterministicBurnCondition <- DeterministicBurnCondition %>%
+  filter(Iteration %in% iterations | (Iteration == 0 & FireID %in% extraIgnitionIDs))
 
 # Burn maps must be kept to generate summarized maps later, this boolean summarizes
 # whether or not burn maps are needed
@@ -353,27 +393,14 @@ getBurnAreas <- function(rawOutputGridPaths) {
 
 # Function to determine which fires should be kept after resampling
 getResampleStatus <- function(burnSummary) {
-  if(minimumFireSize > 0) {
-    burnSummary %>%
-      left_join(DeterministicIgnitionCount, by = "Iteration") %>%
-      group_by(Iteration) %>%
-      arrange(Iteration, FireID) %>%
-      mutate(
-          validFire = Area >= minimumFireSize,
-          validFireCount = cumsum(validFire),
-          ResampleStatus = case_when(
-            !validFire                  ~ "Discarded",
-            validFireCount <= Ignitions ~ "Kept",
-            TRUE                        ~ "Not Used",
-          )) %>%
-      ungroup() %>%
-      select(Iteration, FireID, UniqueBatchFireIndex, Area, ResampleStatus) %>%
-      return()
-  } else {
-    burnSummary %>%
-      mutate(ResampleStatus = "Kept") %>%
-      return()
-  }
+  burnSummary %>%
+    mutate(
+      ResampleStatus = case_when(
+        Area < minimumFireSize ~ "Discarded",
+        Iteration == 0         ~ "Extra",
+        TRUE                   ~ "Kept"
+      )) %>%
+    return()
 }
 
 # Function to convert, accumulate, and clean up raw outputs
@@ -381,7 +408,7 @@ processOutputs <- function(batchOutput, rawOutputGridPaths) {
   # Identify which unique fire ID's belong to each iteration
   # - bind_rows is used to ensure iterations aren't lost if all fires in an iteration are discarded due to size
   batchOutput <- batchOutput %>%
-    filter(ResampleStatus == "Kept") %>%
+    filter(ResampleStatus == "Kept" | ResampleStatus == "Extra") %>%
     bind_rows(tibble(Iteration = unique(batchOutput$Iteration)))
     
   # Summarize the FireIDs to export by Iteration
@@ -633,6 +660,24 @@ generateParameterFile <- function(Iteration, FireID, UniqueBatchFireIndex, seaso
 
 # Function to summarize individual burn grids by iteration
 generateBurnAccumulators <- function(Iteration, UniqueFireIDs, burnGrids, FireIDs, Seasons) {
+  # For iteration zero (fires for resampling), only save individual burn maps
+  if(Iteration == 0) {
+    for(i in seq_along(UniqueFireIDs)){
+      if(!is.na(UniqueFireIDs[i])){
+        burnArea <- as.matrix(fread(burnGrids[UniqueFireIDs[i]], header = F, skip = 6, sep = " "))
+
+        rast(fuelsRaster, vals = burnArea) %>% 
+          mask(fuelsRaster) %>%
+          writeRaster(str_c(allPerimOutputFolder, "/it", Iteration,"_fire_", FireIDs[i], ".tif"), 
+              overwrite = T,
+              NAflag = -9999,
+              wopt = list(filetype = "GTiff",
+                    datatype = "INT4S",
+                    gdal = c("COMPRESS=DEFLATE","ZLEVEL=9","PREDICTOR=2")))
+      }
+    }
+    return()
+  }
 
   # initialize empty matrix for overall accumulator
   accumulator <- matrix(0, nrow(fuelsRaster), ncol(fuelsRaster))
@@ -866,13 +911,13 @@ if (setGrassCuring) {
 
 # Combine deterministic input tables ----
 fireGrowthInputs <- DeterministicBurnCondition %>%
-  # Only consider iterations this job is responsible for
-  filter(Iteration %in% iterations) %>%
   # Group by iteration and fire ID for the `growFire()` function
   group_by(Iteration, FireID) %>%
   nest() %>%
+
   # Add ignition location information
   left_join(ignitionLocation, c("Iteration", "FireID")) %>%
+
   # Group by just iteration for the `runIteration()` function
   group_by(Iteration) %>%
   nest() %>% 
@@ -889,33 +934,13 @@ progressBar(type = "message", message = "Growing fires...")
 
 OutputFireStatistic <- fireGrowthInputs %>%
   map_dfr(runBatch)
-
-# Report status ----
-updateRunLog("\nBurn Summary:\n", 
-             nrow(OutputFireStatistic), " fires burned. \n",
-             sum(OutputFireStatistic$ResampleStatus == "Discarded"), " fires discarded due to insufficient burn area.\n",
-             round(sum(OutputFireStatistic$Area >= minimumFireSize) / nrow(OutputFireStatistic) * 100, 0), "% of simulated fires were above the minimum fire size.\n",
-             round(sum(OutputFireStatistic$ResampleStatus == "Not Used") / nrow(OutputFireStatistic) * 100, 0), "% of simulated fires not used because target ignition count was already met.\n")
-
-# Determine if target ignition counts were met for all iterations
-targetIgnitionsMet <- OutputFireStatistic %>%
-  left_join(DeterministicIgnitionCount, by = "Iteration") %>%
-  group_by(Iteration) %>%
-  summarize(targetIgnitionsMet = sum(ResampleStatus == "Kept") >= head(Ignitions, 1)) %>%
-  pull(targetIgnitionsMet)
-
-if(!all(targetIgnitionsMet))
-  updateRunLog("Could not sample enough fires above the specified minimum fire size for ", sum(!targetIgnitionsMet),
-               " iterations. Please increase the Maximum Number of Fires to Resample per Iteration in the Run Controls",
-               " or decrease the Minimum Fire Size. Please see the Fire Statistics table for details on specific iterations,",
-               " fires, and burn conditions.\n", type = "warning")
   
 updateRunLog("Finished burning fires in ", updateBreakpoint())
 
 # Save relevant outputs ----
 
 ## Fire statistics table ----
-if (OutputOptions$FireStatistics | !all(targetIgnitionsMet)) {
+if (OutputOptions$FireStatistics | minimumFireSize > 0) {
   progressBar(type = "message", message = "Generating fire statistics table...")
 
   # Load necessary rasters and lookup tables
@@ -939,7 +964,7 @@ if (OutputOptions$FireStatistics | !all(targetIgnitionsMet)) {
       DeterministicBurnCondition %>%
       
         # Only consider iterations this job is responsible for
-        filter(Iteration %in% iterations) %>%
+        filter(Iteration %in% iterations | (Iteration == 0 & FireID %in% extraIgnitionIDs)) %>%
           
         # Summarize burn conditions by fire
         group_by(Iteration, FireID) %>%
@@ -1041,7 +1066,7 @@ if (OutputOptionsSpatial$BurnPerimeter) {
 }
 
 ## All Perims ----
-if (OutputOptionsSpatial$AllPerim) {
+if (OutputOptionsSpatial$AllPerim | (saveBurnMaps & minimumFireSize > 0)) {
   progressBar(type = "message", message = "Saving individual burn maps...")
 
   # Build table of burn maps and save to SyncroSim
@@ -1052,7 +1077,7 @@ if (OutputOptionsSpatial$AllPerim) {
       FireID = str_extract(FileName, "\\d+.tif") %>% str_sub(end = -5) %>% as.integer(),
       Timestep = FireID
     ) %>%
-    filter(Iteration %in% iterations) %>%
+    filter(Iteration %in% iterations | (Iteration == 0 & FireID %in% extraIgnitionIDs)) %>%
     as.data.frame()
 
   # Output if there are records to save
