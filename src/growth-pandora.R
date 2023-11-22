@@ -26,6 +26,9 @@ if (prometheusVersion != "6,2021,12,03") {
   stop("Could not find the correct version of Prometheus. Please ensure that you have installed Prometheus v2021.12.03.")
 }
 
+# Ensure the correct Proj Lib is being used
+Sys.setenv("PROJ_LIB" = prometheusLocation %>% dirname %>% file.path("proj_nad/") %>% normalizePath)
+
 ## Connect to SyncroSim ----
 
 myScenario <- scenario()
@@ -837,7 +840,7 @@ if (useWindGrid) {
 # Decide which burn components to keep
 # - Parse table
 outputComponentsToKeep <- OutputOptionsSpatialPrometheus %>%
-  pivot_longer(everything(), names_to = "component", values_to = "keep") %>%
+  pivot_longer(-starts_with(c("Scenario", "Project", "Parent")), names_to = "component", values_to = "keep") %>%
   filter(keep) %>%
   pull(component)
 
