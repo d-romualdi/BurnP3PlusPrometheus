@@ -1,3 +1,8 @@
+# Clean global environment variables
+native_proj_lib <- Sys.getenv("PROJ_LIB")
+Sys.unsetenv("PROJ_LIB")
+
+# Load packages ----
 library(rsyncrosim)
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(lubridate))
@@ -26,8 +31,8 @@ if (prometheusVersion != "6,2021,12,03") {
   stop("Could not find the correct version of Prometheus. Please ensure that you have installed Prometheus v2021.12.03.")
 }
 
-# Ensure the correct Proj Lib is being used
-Sys.setenv("PROJ_LIB" = prometheusLocation %>% dirname %>% file.path("proj_nad/") %>% normalizePath)
+# Find the proj lib directory for prometheus
+prometheus_proj_lib <- prometheusLocation %>% dirname %>% file.path("proj_nad/") %>% normalizePath
 
 ## Connect to SyncroSim ----
 
@@ -429,6 +434,9 @@ processOutputs <- function(batchOutput, rawOutputGridPaths) {
 
 # Function to call Pandora on the (global) parameter file
 runPandora <- function() {
+  # Ensure the correct Proj Lib is being used
+  Sys.setenv("PROJ_LIB" = prometheus_proj_lib)
+
   resetFolder(gridOutputFolder)
 
   # Note than pandora can't handle spaces in the paramter file path
@@ -444,6 +452,9 @@ runPandora <- function() {
     str_replace_all("\\\\", "/") %>%
     str_c("/pandora.exe /silent /nowin ", parameterFile) %>%
     shell()
+
+  # Reset proj lib variable for terra
+  Sys.unsetenv("PROJ_LIB")
 }
 
 # Function to run one batch of iterations
