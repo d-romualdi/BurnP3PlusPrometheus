@@ -4,7 +4,7 @@
   displayName="Prometheus fire growth model add-on package for BurnP3+"
   isAddOn="True"
   extendsPackage="burnP3Plus"
-  version="0.4.10"
+  version="0.4.11"
   url="https://github.com/burnp3/burnp3plusprometheus">
 	<transformers>
 		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
@@ -190,10 +190,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputRateOfSpreadMap" displayName="Output Rate of Spread Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputRateOfSpreadMap" displayName="Output Rate of Spread Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputRateOfSpreadMap" displayName="Output Rate of Spread Map">
 							<columns>
+								<column name="OutputRateOfSpreadMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -204,10 +205,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputFireIntensityMap" displayName="Output Fire Intensity Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputFireIntensityMap" displayName="Output Fire Intensity Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputFireIntensityMap" displayName="Output Rate of Spread Map">
 							<columns>
+								<column name="OutputFireIntensityMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -218,10 +220,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputSpreadDirectionMap" displayName="Output Spread Direction Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputSpreadDirectionMap" displayName="Output Spread Direction Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputSpreadDirectionMap" displayName="Output Spread Direction Map">
 							<columns>
+								<column name="OutputSpreadDirectionMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -232,10 +235,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputSurfaceFuelConsumptionMap" displayName="Output Surface Fuel Consumption Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputSurfaceFuelConsumptionMap" displayName="Output Surface Fuel Consumption Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputSurfaceFuelConsumptionMap" displayName="Output Surface Fuel Consumption Map">
 							<columns>
+								<column name="OutputSurfaceFuelConsumptionMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -246,10 +250,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputCrownFractionBurnedMap" displayName="Output Crown Fraction Burned Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputCrownFractionBurnedMap" displayName="Output Crown Fraction Burned Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputCrownFractionBurnedMap" displayName="Output Crown Fraction Burned Map">
 							<columns>
+								<column name="OutputCrownFractionBurnedMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -260,10 +265,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputCrownFractionConsumedMap" displayName="Output Crown Fraction Consumed Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputCrownFractionConsumedMap" displayName="Output Crown Fraction Consumed Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputCrownFractionConsumedMap" displayName="Output Crown Fraction Consumed Map">
 							<columns>
+								<column name="OutputCrownFractionConsumedMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -274,10 +280,11 @@
 						</datasheet>
 					</datasheets>
 				</datafeed>
-				<datafeed name="OutputTotalFuelConsumptionMap" displayName="Output Total Fuel Consumption Map" dataScope="Scenario" isOutput="True">
+				<datafeed name="OutputTotalFuelConsumptionMap" displayName="Output Total Fuel Consumption Map" dataScope="Scenario">
 					<datasheets>
 						<datasheet name="OutputTotalFuelConsumptionMap" displayName="Output Total Fuel Consumption Map">
 							<columns>
+								<column name="OutputTotalFuelConsumptionMapID" dataType="Integer" isPrimary="True"/>
 								<column name="ScenarioID" dataType="Integer" isCompositeIndex="True"/>
 								<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 								<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
@@ -355,8 +362,8 @@
 	  </layout>
 	</layouts>
 	<updateProvider 
-		schemaVersion="1" 
-		minPackageVersion="0.2.8" 
+		schemaVersion="2" 
+		minPackageVersion="0.4.11" 
 		className="SyncroSim.Core.XMLUpdateProvider" 
 		classAssembly="SyncroSim.Core"/>
 </package>
