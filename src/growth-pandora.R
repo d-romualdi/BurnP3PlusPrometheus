@@ -50,6 +50,13 @@ if (prometheusVersion != "6,2021,12,03") {
 # Find the proj lib directory for prometheus
 prometheus_proj_lib <- prometheusLocation %>% dirname %>% file.path("proj_nad/") %>% normalizePath
 
+# Print all spatial environment variables to run log
+updateRunLog(paste0("Environment variables:",
+                    "\r\nPROJ_LIB: ", Sys.getenv("PROJ_LIB"),
+                    "\r\nGDAL_DATA: ", Sys.getenv("GDAL_DATA"),
+                    "\r\nprometheus_proj_lib: ", prometheus_proj_lib),
+             type = "info")
+
 ## Connect to SyncroSim ----
 
 myScenario <- scenario()
