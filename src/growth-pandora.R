@@ -62,18 +62,18 @@ updateRunLog(paste0("Environment variables:",
 myScenario <- scenario()
 
 # Load run controls and get iterations
-RunControl <- datasheet(myScenario, "burnP3Plus_RunControl")
+RunControl <- datasheet(myScenario, "burnP3Plus_RunControl", returnInvisible = T)
 iterations <- seq(RunControl$MinimumIteration, RunControl$MaximumIteration)
 
 # Load remaining datasheets
 BatchOption <- datasheet(myScenario, "burnP3Plus_BatchOption")
 ResampleOption <- datasheet(myScenario, "burnP3Plus_FireResampleOption")
-DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T) %>% unique()
-DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T) %>% unique()
+DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T, returnInvisible = T) %>% unique()
+DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T, returnInvisible = T) %>% unique()
 FuelType <- datasheet(myScenario, "burnP3Plus_FuelType")
 FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F, optional = T)
 ValidFuelCodes <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCode") %>% pull()
-SeasonTable <- datasheet(myScenario, "burnP3Plus_Season", lookupsAsFactors = F, optional = T, includeKey = T)
+SeasonTable <- datasheet(myScenario, "burnP3Plus_Season", lookupsAsFactors = F, optional = T, includeKey = T, returnInvisible = T)
 WindGrid <- datasheet(myScenario, "burnP3Plus_WindGrid", lookupsAsFactors = F, optional = T)
 GreenUp <- datasheet(myScenario, "burnP3Plus_GreenUp", lookupsAsFactors = F, optional = T)
 Curing <- datasheet(myScenario, "burnP3Plus_Curing", lookupsAsFactors = F, optional = T)
