@@ -12,13 +12,20 @@ suppressPackageStartupMessages(library(data.table))
 checkPackageVersion <- function(packageString, minimumVersion){
   result <- compareVersion(as.character(packageVersion(packageString)), minimumVersion)
   if (result < 0) {
-    stop("The R package ", packageString, " (", as.character(packageVersion(packageString)), ") does not meet the minimum requirements (", minimumVersion, ") for this version of BurnP3+ Prometheus. Please upgrade this package and rerun this scenario.", type = "warning")
+    updateRunLog("The R package ", packageString, " (", 
+         as.character(packageVersion(packageString)), 
+         ") does not meet the minimum requirements (", minimumVersion, 
+         ") for this version of BurnP3+ Prometheus. Please upgrade this package if the scenario fails to run.", 
+         type = "warning")
   } else if (result > 0) {
-    updateRunLog("Using a newer version of ", packageString, " (", as.character(packageVersion(packageString)), ") than BurnP3+ Prometheus was built against (", minimumVersion, ").", type = "info")
+    updateRunLog("Using a newer version of ", packageString, " (", 
+                 as.character(packageVersion(packageString)), 
+                 ") than BurnP3+ Prometheus was built against (", 
+                 minimumVersion, ").", type = "info")
   }
 }
 
-checkPackageVersion("rsyncrosim", "1.4.8")
+checkPackageVersion("rsyncrosim", "1.5.0")
 checkPackageVersion("tidyverse",  "2.0.0")
 checkPackageVersion("terra",      "1.5.21")
 checkPackageVersion("dplyr",      "1.1.2")
@@ -50,23 +57,30 @@ if (prometheusVersion != "6,2021,12,03") {
 # Find the proj lib directory for prometheus
 prometheus_proj_lib <- prometheusLocation %>% dirname %>% file.path("proj_nad/") %>% normalizePath
 
+# Print all spatial environment variables to run log
+updateRunLog(paste0("Environment variables:",
+                    "\r\nPROJ_LIB: ", Sys.getenv("PROJ_LIB"),
+                    "\r\nGDAL_DATA: ", Sys.getenv("GDAL_DATA"),
+                    "\r\nprometheus_proj_lib: ", prometheus_proj_lib),
+             type = "info")
+
 ## Connect to SyncroSim ----
 
 myScenario <- scenario()
 
 # Load run controls and get iterations
-RunControl <- datasheet(myScenario, "burnP3Plus_RunControl")
+RunControl <- datasheet(myScenario, "burnP3Plus_RunControl", returnInvisible = T)
 iterations <- seq(RunControl$MinimumIteration, RunControl$MaximumIteration)
 
 # Load remaining datasheets
 BatchOption <- datasheet(myScenario, "burnP3Plus_BatchOption")
 ResampleOption <- datasheet(myScenario, "burnP3Plus_FireResampleOption")
-DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T) %>% unique()
-DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T) %>% unique()
+DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T, returnInvisible = T) %>% unique()
+DeterministicBurnCondition <- datasheet(myScenario, "burnP3Plus_DeterministicBurnCondition", lookupsAsFactors = F, optional = T, returnInvisible = T) %>% unique()
 FuelType <- datasheet(myScenario, "burnP3Plus_FuelType")
 FuelTypeCrosswalk <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCodeCrosswalk", lookupsAsFactors = F, optional = T)
 ValidFuelCodes <- datasheet(myScenario, "burnP3PlusPrometheus_FuelCode") %>% pull()
-SeasonTable <- datasheet(myScenario, "burnP3Plus_Season", lookupsAsFactors = F, optional = T, includeKey = T)
+SeasonTable <- datasheet(myScenario, "burnP3Plus_Season", lookupsAsFactors = F, optional = T, includeKey = T, returnInvisible = T)
 WindGrid <- datasheet(myScenario, "burnP3Plus_WindGrid", lookupsAsFactors = F, optional = T)
 GreenUp <- datasheet(myScenario, "burnP3Plus_GreenUp", lookupsAsFactors = F, optional = T)
 Curing <- datasheet(myScenario, "burnP3Plus_Curing", lookupsAsFactors = F, optional = T)
@@ -74,6 +88,8 @@ FuelLoad <- datasheet(myScenario, "burnP3Plus_FuelLoad", lookupsAsFactors = F, o
 OutputOptions <- datasheet(myScenario, "burnP3Plus_OutputOption", optional = T)
 OutputOptionsSpatial <- datasheet(myScenario, "burnP3Plus_OutputOptionSpatial", optional = T)
 OutputOptionsSpatialPrometheus <- datasheet(myScenario, "burnP3PlusPrometheus_OutputOptionSpatial", optional = T)
+FireZoneTable <- datasheet(myScenario, "burnP3Plus_FireZone")
+WeatherZoneTable <- datasheet(myScenario, "burnP3Plus_WeatherZone")
 
 # Import relevant rasters
 # - Note that datasheetRaster is avoided as it requires rgdal
@@ -140,6 +156,11 @@ if (nrow(Curing) == 0) {
   Curing[1, ] <- c(NA, 75L)
   saveDatasheet(myScenario, Curing, "burnP3Plus_Curing")
 }
+
+if(nrow(FireZoneTable) == 0)
+  FireZoneTable <- data.frame(Name = "", ID = 0)
+if(nrow(WeatherZoneTable) == 0)
+  WeatherZoneTable <- data.frame(Name = "", ID = 0)
 
 ## Check raster inputs for consistency ----
 
@@ -350,11 +371,11 @@ updateBreakpoint <- function() {
 
   # Return cleaned elapsed time
   if (elapsed < 60) {
-    return(str_c(round(elapsed), "sec"))
+    return(str_c(round(elapsed), " seconds"))
   } else if (elapsed < 60^2) {
-    return(str_c(round(elapsed / 60, 1), "min"))
+    return(str_c(round(elapsed / 60, 1), " minutes"))
   } else {
-    return(str_c(round(elapsed / 60 / 60, 1), "hr"))
+    return(str_c(round(elapsed / 60 / 60, 1), " hours"))
   }
 }
 
@@ -986,8 +1007,6 @@ if (OutputOptions$FireStatistics | minimumFireSize > 0) {
     rast(datasheet(myScenario, "burnP3Plus_LandscapeRasters")[["WeatherZoneGridFileName"]]),
     error = function(e) NULL) %>%
     checkSpatialInput("Weather Zone", warnOnly = T)
-  FireZoneTable <- datasheet(myScenario, "burnP3Plus_FireZone")
-  WeatherZoneTable <- datasheet(myScenario, "burnP3Plus_WeatherZone")
 
   # Add extra information to Fire Statistic table
   OutputFireStatistic <- OutputFireStatistic %>%
@@ -1009,18 +1028,49 @@ if (OutputOptions$FireStatistics | minimumFireSize > 0) {
       by = c("Iteration", "FireID")) %>%
   
       # Determine Fire and Weather Zones if the rasters are present, as well as fuel type of ignition location
-      left_join(DeterministicIgnitionLocation, by = c("Iteration", "FireID")) %>%
+      left_join(DeterministicIgnitionLocation, by = c("Iteration", "FireID"))
+    
+    # Determine Fire and Weather Zones if the rasters are present, as well as 
+    # fuel type of ignition location
+  OutputFireStatistic$cell <- cellFromLatLong(
+      fuelsRaster, 
+      OutputFireStatistic$Latitude, 
+      OutputFireStatistic$Longitude)
+  
+  if (!is.null(weatherZoneRaster)){
+    OutputFireStatistic <- OutputFireStatistic %>%
       mutate(
-        cell = cellFromLatLong(fuelsRaster, Latitude, Longitude),
-        FireZone = ifelse(!is.null(fireZoneRaster), fireZoneRaster[][cell] %>% lookup(FireZoneTable$ID, FireZoneTable$Name), ""),
-        WeatherZone = ifelse(!is.null(weatherZoneRaster), weatherZoneRaster[][cell] %>% lookup(WeatherZoneTable$ID, WeatherZoneTable$Name), ""),
-        FuelType = fuelsRaster[][cell] %>% lookup(FuelType$ID, FuelType$Name)) %>%
-      
+        weatherzoneID = weatherZoneRaster[][cell],
+        WeatherZone = lookup(weatherzoneID, WeatherZoneTable$ID, WeatherZoneTable$Name)
+      ) %>%
+      dplyr::select(-weatherzoneID)
+  } else{
+    OutputFireStatistic$WeatherZone <- WeatherZoneTable$Name
+  }
+  
+  if (!is.null(fireZoneRaster)){
+    OutputFireStatistic <- OutputFireStatistic %>%
+      mutate(
+        firezoneID = fireZoneRaster[][cell],
+        FireZone = lookup(firezoneID, FireZoneTable$ID, FireZoneTable$Name)
+      ) %>%
+      dplyr::select(-firezoneID)
+  } else{
+    OutputFireStatistic$FireZone <- FireZoneTable$Name
+  }
+  
+  OutputFireStatistic <- OutputFireStatistic %>%
+    mutate(
+      fueltypeID = fuelsRaster[][cell],
+      FuelType = lookup(fueltypeID, FuelType$ID, FuelType$Name),
+      Timestep = 0) %>%
+    
       # Incorporate Lat and Long and add TimeStep manually
-      mutate(Timestep = 0) %>%
     
       # Clean up for saving
-      dplyr::select(Iteration, Timestep, FireID, Latitude, Longitude, Season, Cause, FireZone, WeatherZone, FuelType, FireDuration, HoursBurning, Area, ResampleStatus) %>%
+      dplyr::select(Iteration, Timestep, FireID, Latitude, Longitude, Season, 
+                    Cause, FireZone, WeatherZone, FuelType, FireDuration, 
+                    HoursBurning, Area, ResampleStatus) %>%
       as.data.frame()
       
     # Output if there are records to save
