@@ -74,6 +74,7 @@ RunControl <- datasheet(myScenario, "burnP3Plus_RunControl", returnInvisible = T
 iterations <- seq(RunControl$MinimumIteration, RunControl$MaximumIteration)
 
 # Load remaining datasheets
+Multithreading <- datasheet(myScenario, "burnP3PlusPrometheus_PrometheusMultithreading")
 BatchOption <- datasheet(myScenario, "burnP3Plus_BatchOption")
 ResampleOption <- datasheet(myScenario, "burnP3Plus_FireResampleOption")
 DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T, returnInvisible = T) %>% unique()
@@ -217,6 +218,13 @@ parameterFilePlaceHolders <- list(
   duration    = "durationPlaceHolder")
 
 ## Extract relevant parameters ----
+
+# Check if multithreading enabled
+if (Multithreading$EnableMultithreading) {
+  numThreads <- Multithreading$ThreadsPerIteration
+} else {
+  numThreads <- 1
+}
 
 # Batch size for batched runs
 batchSize <- BatchOption$BatchSize
@@ -618,7 +626,7 @@ generateParamaterTemplate <- function(placeHolderNames){
     str_c("Wx_file ", placeHolderNames$weatherFile),
     str_c("Init_hour 13"),
     str_c("FFMC_Method 5"),
-    str_c("Threads 1"),
+    str_c("Threads", numThreads),
     if (useWindGrid) {
       WindGridParameterStrings
     } else {

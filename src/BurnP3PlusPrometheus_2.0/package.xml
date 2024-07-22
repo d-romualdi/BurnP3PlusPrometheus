@@ -3,6 +3,16 @@
 
 	<builtFor package = "burnP3Plus" version = "2.0.0"/>
 
+	<!--Library Datasheets-->
+
+	<dataSheet name="PrometheusMultithreading" displayName="Prometheus Multithreading" isSingleRow="True" dataScope="Library">
+		<column name="EnableMultithreading" displayName="Enable Multithreading" dataType="Boolean"/>
+		<column name="ThreadsPerIteration" displayName="Threads Per Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="1"/>
+		<record columns="EnableMultithreading" values="-1"/>
+		<record columns="ThreadsPerIteration" values="1"/>
+	</dataSheet>
+
+
 	<!--Project Datasheets-->
 
 	<dataSheet name="FuelCode" displayName="Prometheus Fuel Code List" displayMember="FuelCode" dataScope="Project">
@@ -166,7 +176,7 @@
 	<dataSheet name="OutputRateOfSpreadMap" displayName="Output Rate of Spread Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Rate of Spread Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="RateOfSpread"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -174,7 +184,7 @@
 	<dataSheet name="OutputFireIntensityMap" displayName="Output Rate of Spread Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Fire Intensity Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="FireIntensity"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -182,7 +192,7 @@
 	<dataSheet name="OutputSpreadDirectionMap" displayName="Output Spread Direction Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireD" dataType="Integer"/>
 		<column name="FileName" displayName="Spread Direction Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="SpreadDirection"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -190,7 +200,7 @@
 	<dataSheet name="OutputSurfaceFuelConsumptionMap" displayName="Output Surface Fuel Consumption Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Surface Fuel Consumption Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="SurfaceFuelConsumption"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -198,7 +208,7 @@
 	<dataSheet name="OutputCrownFractionBurnedMap" displayName="Output Crown Fraction Burned Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Crown Fraction Burned Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="CrownFractionBurned"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -206,7 +216,7 @@
 	<dataSheet name="OutputCrownFractionConsumedMap" displayName="Output Crown Fraction Consumed Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Crown Fraction Consumed Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="CrownFractionConsumed"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -214,7 +224,7 @@
 	<dataSheet name="OutputTotalFuelConsumptionMap" displayName="Output Total Fuel Consumption Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireId" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Total Fuel Consumption Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="TotalFuelConsumption"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
@@ -284,6 +294,11 @@
 			<item name="cfc" displayName="Crown Fraction Consumed" dataSheet="OutputCrownFractionConsumedMap" column="FileName"/>
 			<item name="tfc" displayName="Total Fuel Consumption" dataSheet="OutputTotalFuelConsumptionMap" column="FileName"/>
 		</group>
+	</layout>
+
+	<!--Library Layout-->
+	<layout type="Library">
+		<item name="PrometheusMultithreading"/>
 	</layout>
 
 	<!--Project Layout-->
