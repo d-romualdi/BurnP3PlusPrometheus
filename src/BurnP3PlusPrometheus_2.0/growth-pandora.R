@@ -219,7 +219,7 @@ parameterFilePlaceHolders <- list(
 ## Extract relevant parameters ----
 
 # Check if multithreading enabled
-if (Multithreading$EnableMultithreading) {
+if (Multithreading$EnableMultithreading) { # default is TRUE
   numThreads <- Multithreading$ThreadsPerIteration
 } else {
   numThreads <- 1
