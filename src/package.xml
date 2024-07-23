@@ -3,6 +3,19 @@
 	<transformers>
 		<transformer name="fireGrowthPrometheus" isPrimary="True" displayName="3 - Grow Fires with Prometheus" isRunnable="True" programName="Rscript" runContext="AllowRemote" className="SyncroSim.StochasticTime.StochasticTimeTransformer" classAssembly="SyncroSim.StochasticTime" programArguments="growth-pandora.R" configurationSheet="burnP3Plus_RunControl" condaEnv="burnP3Plus.yml">
 			<datafeeds>
+				<datafeed name="PrometheusMultithreading" displayName="Prometheus Multithreading" dataScope="Library">
+					<datasheets>
+						<datasheet name="PrometheusMultithreading" displayName="Prometheus Multithreading" valueMember="PrometheusMultithreadingID" displayMember="PrometheusMultithreading">
+							<columns>
+								<column name="EnableMultithreading" dataType="Boolean"/>
+								<column name="ThreadsPerIteration" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="1"/>
+							</columns>
+							<defaultRecords>
+								<record columns="EnableMultithreading|ThreadsPerIteration" values="-1|1"/>
+							</defaultRecords>
+						</datasheet>
+					</datasheets>
+				</datafeed>
 				<datafeed name="FuelCode" displayName="Prometheus Fuel Code List" dataScope="Project">
 					<datasheets>
 						<datasheet name="FuelCode" displayName="Prometheus Fuel Code List" valueMember="FuelCodeID" displayMember="FuelCode">
@@ -162,8 +175,8 @@
 								<column name="Code" displayName="Prometheus Fuel Code" dataType="Integer" validationType="Datasheet" formula1="FuelCode"/>
 							</columns>
 							<validations>
-                <validation validationType="Unique" columns="FuelType"/>
-              </validations>
+								<validation validationType="Unique" columns="FuelType"/>
+							</validations>
 						</datasheet>
 					</datasheets>
 				</datafeed>
@@ -349,15 +362,11 @@
 			</group>
 		</layout>
 		<layout name ="coreforms_ProjectDatafeeds" appendTo="burnP3Plus_FuelDefinition">
-	  	<item name="FuelCodeCrosswalk" displayName="Prometheus Crosswalk"/>
-	  </layout>
-	  <layout name="coreforms_ScenarioDatafeeds" appendTo="burnP3Plus_OutputOption">
+			<item name="FuelCodeCrosswalk" displayName="Prometheus Crosswalk"/>
+		</layout>
+		<layout name="coreforms_ScenarioDatafeeds" appendTo="burnP3Plus_OutputOption">
 			<item name="OutputOptionSpatial" displayName="Prometheus" showIf="inPipeline"/>
-	  </layout>
+		</layout>
 	</layouts>
-	<updateProvider 
-		schemaVersion="2" 
-		minPackageVersion="0.4.11" 
-		className="SyncroSim.Core.XMLUpdateProvider" 
-		classAssembly="SyncroSim.Core"/>
+	<updateProvider schemaVersion="2" minPackageVersion="0.4.11" className="SyncroSim.Core.XMLUpdateProvider" classAssembly="SyncroSim.Core"/>
 </package>
