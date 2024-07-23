@@ -8,10 +8,8 @@
 	<dataSheet name="PrometheusMultithreading" displayName="Prometheus Multithreading" isSingleRow="True" dataScope="Library">
 		<column name="EnableMultithreading" displayName="Enable Multithreading" dataType="Boolean"/>
 		<column name="ThreadsPerIteration" displayName="Threads Per Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="1"/>
-		<record columns="EnableMultithreading" values="-1"/>
-		<record columns="ThreadsPerIteration" values="1"/>
+		<record columns="EnableMultithreading|ThreadsPerIteration" values="-1|1"/>
 	</dataSheet>
-
 
 	<!--Project Datasheets-->
 
@@ -192,7 +190,7 @@
 	<dataSheet name="OutputSpreadDirectionMap" displayName="Output Spread Direction Map">
 		<column name="Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="Greater" formula1="0" format="d"/>
 		<column name="Timestep" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="0" format="d" isVisible="False"/>
-		<column name="FireD" dataType="Integer"/>
+		<column name="FireID" dataType="Integer"/>
 		<column name="FileName" displayName="Spread Direction Map" dataType="String" allowDbNull="False" isExternalFile="True" isRaster="True" bandColumn="Band" filenameCode="SpreadDirection"/>
 		<column name="Band" displayName="Band" dataType="Integer" allowDbNull="True" isOptional="True"/>
 	</dataSheet>
