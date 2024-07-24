@@ -73,6 +73,7 @@ RunControl <- datasheet(myScenario, "burnP3Plus_RunControl", returnInvisible = T
 iterations <- seq(RunControl$MinimumIteration, RunControl$MaximumIteration)
 
 # Load remaining datasheets
+Multithreading <- datasheet(myScenario, "burnP3PlusPrometheus_PrometheusMultithreading")
 BatchOption <- datasheet(myScenario, "burnP3Plus_BatchOption")
 ResampleOption <- datasheet(myScenario, "burnP3Plus_FireResampleOption")
 DeterministicIgnitionLocation <- datasheet(myScenario, "burnP3Plus_DeterministicIgnitionLocation", lookupsAsFactors = F, optional = T, returnInvisible = T) %>% unique()
@@ -216,6 +217,13 @@ parameterFilePlaceHolders <- list(
   duration    = "durationPlaceHolder")
 
 ## Extract relevant parameters ----
+
+# Check if multithreading enabled
+if (Multithreading$EnableMultithreading) { # default is TRUE
+  numThreads <- Multithreading$ThreadsPerIteration
+} else {
+  numThreads <- 1
+}
 
 # Batch size for batched runs
 batchSize <- BatchOption$BatchSize
@@ -617,7 +625,7 @@ generateParamaterTemplate <- function(placeHolderNames){
     str_c("Wx_file ", placeHolderNames$weatherFile),
     str_c("Init_hour 13"),
     str_c("FFMC_Method 5"),
-    str_c("Threads 1"),
+    str_c("Threads", numThreads),
     if (useWindGrid) {
       WindGridParameterStrings
     } else {
@@ -831,7 +839,7 @@ generateBurnAccumulators <- function(Iteration, UniqueFireIDs, burnGrids, FireID
       # Mask and save as raster
       rast(fuelsRaster, vals = seasonalAccumulators[[season]]) %>%
         mask(fuelsRaster) %>%
-        writeRaster(str_c(seasonalAccumulatorOutputFolder, "/it", Iteration, "-sn", lookup(season, SeasonTable$Name, SeasonTable$SeasonID), ".tif"), 
+        writeRaster(str_c(seasonalAccumulatorOutputFolder, "/it", Iteration, "-sn", lookup(season, SeasonTable$Name, SeasonTable$SeasonId), ".tif"), 
                     overwrite = T,
                     NAflag = -9999,
                     wopt = list(filetype = "GTiff",
@@ -1104,7 +1112,7 @@ if (saveBurnMaps) {
           Timestep = 0,
           Season = str_extract(FileName, "\\d+.tif") %>% str_sub(end = -5) %>% as.integer()) %>%
         mutate(
-          Season = lookup(Season, SeasonTable$SeasonID, SeasonTable$Name)) %>%
+          Season = lookup(Season, SeasonTable$SeasonId, SeasonTable$Name)) %>%
         filter(Iteration %in% iterations)) %>%
       as.data.frame
   }
