@@ -50,6 +50,11 @@ if (prometheusLocation == "") {
 
 prometheusVersion <- str_c('powershell "(Get-Item -path ', prometheusLocation, ').VersionInfo.ProductVersion"') %>%
   shell(intern = T)
+
+if (length(prometheusVersion) > 1) {
+  stop(paste("Problem loading Prometheus from PowerShell:", prometheusVersion, sep = "\n"))
+}
+
 if (prometheusVersion != "6,2021,12,03") {
   stop("Could not find the correct version of Prometheus. Please ensure that you have installed Prometheus v2021.12.03.")
 }
@@ -300,7 +305,7 @@ if (nrow(FuelTypeCrosswalk) > 0) {
 }
 
 # Decide whether or not to manually set grass fuel loading
-useWindGrid <- nrow(WindGrid) > 0
+useWindGrid <- !all(is.na(WindGrid))
 
 # Decide whether or not to manually set grass fuel loading and curing
 setFuelLoad <- nrow(FuelLoad) > 0
@@ -491,7 +496,7 @@ runPandora <- function() {
   if (str_detect(tempDir, " ")) {
     parameterTempFile <- tempfile(pattern = "pandora_parameter", fileext = ".txt")
     file.copy(parameterFile, parameterTempFile, overwrite = T)
-    parameterFile <- parameterTempFile
+    parameterFile <- normalizePath(parameterTempFile)
   }
 
   ssimEnvironment()$PackageDirectory %>%
@@ -625,7 +630,7 @@ generateParamaterTemplate <- function(placeHolderNames){
     str_c("Wx_file ", placeHolderNames$weatherFile),
     str_c("Init_hour 13"),
     str_c("FFMC_Method 5"),
-    str_c("Threads", numThreads),
+    str_c("Threads ", numThreads),
     if (useWindGrid) {
       WindGridParameterStrings
     } else {
