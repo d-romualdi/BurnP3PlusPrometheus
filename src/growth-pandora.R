@@ -496,7 +496,7 @@ runPandora <- function() {
   if (str_detect(tempDir, " ")) {
     parameterTempFile <- tempfile(pattern = "pandora_parameter", fileext = ".txt")
     file.copy(parameterFile, parameterTempFile, overwrite = T)
-    parameterFile <- normalizePath(parameterTempFile)
+    parameterFile <- parameterTempFile
   }
 
   ssimEnvironment()$PackageDirectory %>%
@@ -510,7 +510,6 @@ runPandora <- function() {
 
 # Function to run one batch of iterations
 runBatch <- function(batchInputs) {
-  browser()
   # Generate batch-specific inputs
   # - Unnest and process ignition info
   batchInputs <- unnest(batchInputs, data) %>%
