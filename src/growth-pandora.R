@@ -502,7 +502,7 @@ runPandora <- function() {
   ssimEnvironment()$PackageDirectory %>%
     str_replace_all("\\\\", "/") %>%
     str_c("/pandora.exe /silent /nowin ", parameterFile) %>%
-    shell()
+    shell(mustWork = TRUE, intern = TRUE)
 
   # Reset proj lib variable for terra
   Sys.unsetenv("PROJ_LIB")
@@ -510,6 +510,7 @@ runPandora <- function() {
 
 # Function to run one batch of iterations
 runBatch <- function(batchInputs) {
+  browser()
   # Generate batch-specific inputs
   # - Unnest and process ignition info
   batchInputs <- unnest(batchInputs, data) %>%
