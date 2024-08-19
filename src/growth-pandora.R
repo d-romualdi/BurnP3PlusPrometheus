@@ -222,12 +222,7 @@ parameterFilePlaceHolders <- list(
 
 ## Extract relevant parameters ----
 
-# Check if multithreading enabled
-if (Multithreading$EnableMultithreading) { # default is TRUE
-  numThreads <- Multithreading$ThreadsPerIteration
-} else {
-  numThreads <- 1
-}
+numThreads <- Multithreading$ThreadsPerIteration
 
 # Batch size for batched runs
 batchSize <- BatchOption$BatchSize
