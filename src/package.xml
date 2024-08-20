@@ -7,7 +7,7 @@
 
 	<dataSheet name="PrometheusMultithreading" displayName="Prometheus Multithreading" isSingleRow="True">
 		<column name="ThreadsPerIteration" displayName="Threads Per Iteration" dataType="Integer" validationType="WholeNumber" validationCondition="GreaterEqual" formula1="1"/>
-		<record columns="EnableMultithreading|ThreadsPerIteration" values="-1|1"/>
+		<record columns="ThreadsPerIteration" values="1"/>
 	</dataSheet>
 
 	<!--Project Datasheets-->
