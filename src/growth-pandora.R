@@ -625,6 +625,7 @@ generateParamaterTemplate <- function(placeHolderNames){
     str_c("Init_hour 13"),
     str_c("FFMC_Method 5"),
     str_c("Threads ", numThreads),
+    str_c("Landscape_Constant 1"),
     if (useWindGrid) {
       WindGridParameterStrings
     } else {
